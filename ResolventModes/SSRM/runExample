@@ -1,0 +1,12 @@
+#!/bin/bash
+
+./importLibs
+
+makenek Nek_SSRM
+
+genmap <<
+channel_2D
+
+<< EOF
+
+./runArnoldi channel_2D 2 0 10 
