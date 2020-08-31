@@ -46,6 +46,8 @@ Examples for the computation of modes for 2/3D channel flows are. To reproduce v
 > `makenek Nek_TRM`   
 > `./runArnoldi channel_[2/3]D [number of cores] 0 20`
 
+Alternatively, run the **runExamples** file.
+
 ##Files
 The main files, other than the inputs previously mentioned, are
 
