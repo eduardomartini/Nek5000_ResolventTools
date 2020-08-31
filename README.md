@@ -2,7 +2,7 @@
 
 **Nek5000 ResolventTools** is intended as a collection of resolvent-based tools developed on top of [Nek5000](https://nek5000.mcs.anl.gov/) code, which can be used for resolvent analysis [1] and estimation [2] of incompressible flows. 
 
-The tools used here share a set of routines, e.g. for reading/saving snapshots, computing Fourier transforms,  etc. These are stores in the "Libs" folder. Links for the files needed are created on each tool folder by running **importLibs**. 
+The tools used here share a set of routines, e.g. for reading/saving snapshots, computing Fourier transforms,  etc. These are stores in the "Libs" folder. Links for the routines used are created on each tool folder.
 
 ## Get the code 
 Time marching and other intensive tasks are implemented on top of *Nek5000* open-source code, with most pos/pre processing operations are performed in the [Octave](https://www.gnu.org/software/octave/) environment, please make sure to have these setup and working. The tools were developed and tested using v17, but should also work with v19.
