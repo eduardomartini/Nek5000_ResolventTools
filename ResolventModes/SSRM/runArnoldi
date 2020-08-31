@@ -65,7 +65,6 @@ for i in $(seq -f "%02.0f" $iStart $iEnd ); do
 
 	# Running Iteration
 	nekmpi $reaFile $nproc > log_dir
-	exit
 	#Move Files 
 	echo "Moving Files..." 
 	mkdir "IterAr$i"
