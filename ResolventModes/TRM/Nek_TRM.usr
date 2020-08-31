@@ -107,9 +107,9 @@ c      write(*,*) 'Tols : ' , tolabs, tolrel,tolhdf,tolpdf
        param(12)=-abs(dt)
 
        !Remove end run conditions from reaFile
-       FINTIM=0
-       NSTEPS=0
-       param(10:11)=0
+       FINTIM=1e9
+       NSTEPS=1e9
+       param(10:11)=1e9
 
        ! change IO as to not save baseflow
        IOSTEP      = 0
