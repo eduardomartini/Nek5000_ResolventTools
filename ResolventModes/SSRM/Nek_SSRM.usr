@@ -96,6 +96,12 @@ c-----------------------------------------------------------------------
                       
       if (istep==0) then
         if (NIO==0) write(*,*) "Initializing Routines"
+        !Remove end run conditions from reaFile
+        FINTIM=0
+        NSTEPS=0
+        param(10:11)=0
+
+
         ! change IO as to not save baseflow
         pertIO = IOSTEP
         IOSTEP = 0
