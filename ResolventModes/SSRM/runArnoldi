@@ -1,0 +1,108 @@
+#!/bin/bash
+if [ $# -lt 4 ]; then
+  echo 'Use as :  ./runArnoldi [reafile] [nproc] [firstIter] [lastIter] [nOctSections(opitional)]'
+  exit
+fi
+
+if [ ! -f $1.rea   ]; then
+      echo "Missing rea file."
+      exit
+fi
+
+if [  ! -f $1.map  ]; then
+      echo "Missing map file."
+      exit
+fi
+
+reaFile=$1
+nproc=$2
+iStart=$3
+iEnd=$4
+if [ $# -eq 4 ]; then
+  nOctProcs=$nproc
+else
+  nOctProcs=$5
+fi
+
+mkdir ForceFiles
+
+
+for i in $(seq -f "%02.0f" $iStart $iEnd ); do
+      ##----------Direct run ------------------##
+	rm ForceFiles/*
+      if [ $i -ne 0  ]; then
+      ##-----  Process Arnoldi Iteration ------##
+	      rm ForceFiles/*
+        for j in $(seq 1  $nOctProcs); do 
+           echo "Lauching octave processes: $j / $nOctProcs" 
+           octave-cli -W --eval "reaFile='$reaFile';iProc=$j;nProc=$nOctProcs;Nek_Arnoldi;exit"  > logOrth_$j &
+           pids[${j}]=$!
+        done
+        echo "Waiting octave process to finish..."
+        j=0 
+        for pid in ${pids[*]}; do
+           j=$(($j+1))
+           echo "Waiting for $j-th octave: PID $pid"
+           wait $pid
+        done
+        echo "Done. Moving on" 
+	      
+      	params=$(tail -n +2 params.input)
+            echo 2 > params.input
+            echo "$params" >> params.input
+
+	      ls ForceFiles/*Cos* | wc -l > harmCompList.txt
+	      ls ForceFiles/*Cos*  >> harmCompList.txt
+	      ls ForceFiles/*Sin*  >> harmCompList.txt
+
+      else
+      	params=$(tail -n +2 params.input)
+        echo 0 > params.input
+        echo "$params" >> params.input            
+      fi
+	echo 'Running Direct Run Iter ' $i
+
+
+	# Running Iteration
+	nekmpi $reaFile $nproc > log_dir
+	exit
+	#Move Files 
+	echo "Moving Files..." 
+	mkdir "IterAr$i"
+	mkdir "IterAr$i/dir/"
+	mv {c,s}01* f{c,s}1* pertNorm.txt log_dir logOrth_* "IterAr$i/dir/"
+
+  ##----------Adjoint run -----------------##
+  ls "IterAr$i/dir/"c01* | wc -l > harmCompList.txt
+  ls "IterAr$i/dir/"c01* >> harmCompList.txt
+  ls "IterAr$i/dir/"s01* >> harmCompList.txt
+
+  echo 1 > params.input
+	echo "$params" >> params.input
+	echo 'Running Adjoint Run Iter ' $i
+	# Running Iteration
+	nekmpi $reaFile $nproc > log_adj
+	
+	mkdir "IterAr$i/adj/"
+	mv {c,s}01* f{c,s}1* pertNorm.txt log_adj "IterAr$i/adj/"
+
+done
+
+
+#Final octave run to compute gains
+for j in $(seq 1  $nOctProcs); do 
+   echo "Lauching octave processes: $j / $nOctProcs" 
+   octave-cli -W --eval "reaFile='$reaFile';nOutputModes=-1;iProc=$j;nProc=$nOctProcs;Nek_Arnoldi;exit"  > logOrth_$j &
+   pids[${j}]=$!
+done
+echo "Waiting octave process to finish..."
+for pid in ${pids[*]}; do
+   j=$(($j+1))
+   echo "Waiting for $j-th octave: PID $pid"
+   wait $pid
+done
+echo "Done. Moving on" 
+
+	
+	
+

@@ -1,0 +1,332 @@
+c-----------------------------------------------------------------------
+C
+C  USER SPECIFIED ROUTINES:
+C
+C     - boundary conditions
+C     - initial conditions
+C     - variable properties
+C     - local acceleration for fluid (a)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.
+
+      include 'FFT.f'      
+      include 'SavePerturbations.f'
+      include 'Load_FLD_To.f'
+      include 'FLD2Force.f'
+      include 'FIR.f'
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      use FLD2Force
+      include 'SIZE'
+      include 'TOTAL'
+      
+      include 'NEKUSE'
+      real fffx,fffy,fffz
+      real tmp
+      integer , save :: lastISTEP = -1 , icount = 0
+      integer ix,iy,iz, eg,e,ijke ,ntot , nloc
+      integer currIter
+      COMMON /ResMode/ currIter
+
+      e = gllel(eg)
+      if ( currIter > 0) then
+        call FLD2Force_GetF(ix,iy,iz,eg,fffx,fffy,fffz)
+        ffx = fffx
+        ffy = fffy
+        ffz = fffz
+      else
+        ffx = 0
+        ffy = 0
+        ffz = 0        
+      endif
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      use FLD2Force
+      use FFT 
+      use SavePerturb
+      use FIR
+      implicit none
+      include 'SIZE'
+      include 'TSTEP'           ! ISTEP
+      include 'INPUT'           ! PARAM
+      include 'SOLN'            ! V[XYZ]
+      include 'GEOM'            ! xm1,ym1
+      include 'ADJOINT'
+      include 'MASS'
+      real,external::glsum
+      real,save :: vol
+      integer ntot,i,j , ipert
+      real pertNorm , tmp 
+      character(len=100) FLDReference 
+      character(len=100) fileAdd1 , fileAdd2
+      real fffx,fffy,fffz 
+      real,save :: absTol = 0
+      real,save ::  relativeTol 
+      integer currIter ,pertIO
+      character(len=100) refFile      
+      logical, save :: exitTimeSet = .false. 
+      logical, save :: firstSave = .true.
+      logical file_exists 
+      real resParams(6)
+      
+      COMMON /ResMode/ currIter, pertIO,resParams
+          ntot = nx1*ny1*nz1*nelt
+c      write(*,*) 'Tols : ' , tolabs, tolrel,tolhdf,tolpdf 
+           
+           
+      if (istep==0) then
+       if (NIO==0) write(*,*) "Initializing Routines"
+       ! overwritte dt
+       dt=resParams(2)
+       param(12)=-abs(dt)
+
+       ! change IO as to not save baseflow
+       IOSTEP      = 0
+       param(14)   = 0
+       param(15)   = 0
+       pertIO      = int(resParams(3))
+       relativeTol =     resParams(6)
+
+       !Save Mass Matrix for posprocessing
+       ifxyo = .true.
+       call outpost2(bm1,bm1,bm1,bm2,bm1,0,'bm1')
+       if (currIter==-3) call exitt
+       !Load Force mask file 
+       open (unit=98, file='filterParams.txt',
+     $           status='replace',action='write')
+       write(98,*) dt*pertIO ! output sampling frequency
+       close(98)
+      endif
+
+c     currIter == -2 , Perform FT.       
+      if (NIO==0) write(*,*) "Check currIter==-2"
+      if (currIter == -2) then
+            fileAdd1 = 'FFT_FileList.txt'! file list
+            fileAdd2 = 'freqList.input'   ! filter coefs
+            call ApplyFft(fileAdd1,fileAdd2,dt*pertIO)       
+            call exitt
+      endif
+c     currIter == -1 , Perform FIR.
+      if (NIO==0) write(*,*) "Check currIter==-1" ,currIter
+      if (currIter ==-1) then
+        if (NIO==0) write(*,*) "Applying FIR filter..."
+            fileAdd1 = 'FIR_FileList.txt'! file list
+            fileAdd2 = 'FIR_Coefs.txt'   ! filter coefs
+            call ApplyFIR(fileAdd1,fileAdd2,pertIO*dt,absTol)       
+            open (unit=98, file='runCompleted',
+     $            status='replace',action='write')
+            write(98,*) 'Done' 
+            close(98)
+            call exitt
+      endif
+      
+      
+c     currIter >= 0 , integrate NS.       
+      if (NIO==0) write(*,*) 'Updating Forces...',currIter
+      if ( currIter  > 0) then
+            if (istep==0) then
+                  refFile = 'ForceFLDLists.txt'
+                  call FLD2ForceInit(refFile)                  
+            endif
+            call  FLD2ForceUpdate()
+      endif
+
+      if (istep ==0) then       
+        if ( modulo(currIter,2)  == 0) then
+          ifadj = .false.
+        else
+          ifadj = .true.
+        endif
+        refFile = 'freqList.input'
+        call InitFFts(refFile)
+      endif
+
+      ! calculate current norm and save to disk
+      if (NIO==0) write(*,*) 'Computing run Norm...'
+      
+      pertNorm = 0
+      do i=1,ntot 
+        pertNorm = pertNorm + ( vxp(i,1)**2 + vyp(i,1)**2
+     $                         )*bm1(i,1,1,1)
+        if (ndim==3) pertNorm = pertNorm + 
+     $                 vzp(i,1)**2*bm1(i,1,1,1)
+      enddo
+      pertNorm = sqrt(glsum(pertNorm,1))
+
+      ! takes into account larger gains variations
+      absTol = max(absTol,pertNorm*relativeTol)  
+
+       
+      ! IO Operations   
+      if (mod(ISTEP,abs(pertIO))==0) then
+       call SavePerturbationsNow('i')
+       if (NIO==0) then   
+          if (istep == 0) then
+            open (unit=99, file='runNormSaved.txt',
+     $            status='replace',action='write')
+          else
+            open (unit=99, file='runNormSaved.txt',
+     $     position="append" ,status='old',action='write')
+          endif
+          
+          write(99,*) time , pertNorm , j !exitTimeSet
+          close(99)
+        endif ! NIO==0
+      endif ! ISTEP
+
+
+      !update ffts every output step
+      if (modulo(istep,pertIO)==0)  then
+            if (NIO==0) write(*,*) 'Updating FFts...'
+            call UpdateFFts(dt*pertIO)
+      endif
+            
+      
+      if (NIO==0) write(*,*) 'Checking Exit conditions...'
+      !Check if norm is above the threshold
+      if ( pertNorm > absTol ) then ! , if it is, keep going
+        exitTimeSet = .false.
+      else  ! otherwise wait for last file read (currIter>0) or quit (currInter==0)
+        if ( currIter  > 0 ) then
+          if (NIO==0) write(*,*) 'Check if all files were read...'
+          exitTimeSet = .not.  FLD2Force_StillActive() ! set end of run after force is no longer active   
+        else
+         exitTimeSet=.true.
+        endif
+      endif
+
+      if (NIO==0) write(*,*) 'AbsTol : ', absTol,
+     $ ' rel', relativeTol  ,' pertNorm ', pertNorm, exitTimeSet
+      
+      if ( exitTimeSet) then
+        if (NIO==0) write(*,*) 'Leaving and outposting FFts...'
+          call OutPostFFts(1,1)
+          if (NIO==0) write(*,*) 'Creating runCompled file...'
+        open (unit=98, file='runCompleted',
+     $            status='replace',action='write')
+        write(98,*) 'Done' 
+        close(98)
+
+        call exitt
+      end if
+        
+      
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+c     NOTE ::: This subroutine MAY NOT be called by every process
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      if (JP>0) then
+            ux=0.0
+            uy=0.0
+            uz=0.0
+            temp=0.0
+      endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      real tmp
+      real resParams(6)
+      integer currIter,pertIO
+      COMMON /ResMode/ currIter,pertIO,resParams
+      
+
+      if (JP>0) then
+       if ( currIter  == 0) then
+        call RANDOM_NUMBER(ux)
+        call RANDOM_NUMBER(uy)
+        call RANDOM_NUMBER(uz)
+        ux = ux*2-1
+        uy = uy*2-1
+        uz = uz*2-1
+        temp = 0
+       else
+        ux  =0.0 
+        uy  =0.0
+        uz  =0.0
+        temp=0.0
+       endif
+      endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+      real resParams(6)
+      integer currIter,pertIO
+      COMMON /ResMode/ currIter,pertIO,resParams
+      
+      if(NIO==0) write(*,*) 'Reading params.input'
+      open (unit=98, file='params.input',
+     $                status='old',action='read')
+      read(98,*) resParams
+      close(98)
+      currIter = resParams(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c      include 'MASS'
+      integer  currIter,pertIO
+      COMMON /ResMode/ currIter,pertIO,resParams
+      
+      !Save Undeformed Mass Matrix (before loading external fld) for posprocessing
+      if(NIO==0) write(*,*) 'Saving bm0 file.'
+      if (istep==0) then
+            ifxyo = .true.
+            call outpost2(bm1,bm1,
+     $                    bm1,bm2,
+     $                    bm1,0,'bm0')
+      endif
+      if (currIter==-3) call exitt
+      
+      return
+      end
+
+

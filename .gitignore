@@ -1,0 +1,8 @@
+*.fld
+*0.f*
+*.mod
+nek5000
+*.txt
+*.dat
+*.sublime-project
+*.sublime-workspace

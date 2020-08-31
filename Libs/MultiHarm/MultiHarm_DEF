@@ -1,0 +1,6 @@
+      implicit none
+      include 'SIZE'
+      real ::  cosShapes(lx1,ly1,lz1,lelt,3,nMaxHarm)
+      real ::  sinShapes(lx1,ly1,lz1,lelt,3,nMaxHarm)
+      
+      COMMON /MultiHarmBlock/  cosShapes,sinShapes

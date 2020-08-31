@@ -1,0 +1,13 @@
+      integer , parameter::  maxfilterOrder=401
+      integer ::  filterOrder
+      real ::  firCoefs(maxfilterOrder)      
+      real ::  filterMem(lx1,ly1,lz1,lelt,3,maxfilterOrder)      
+      
+      COMMON /firMOD/ filterOrder,firCoefs,
+     $  filterMem
+      save  /firMOD/
+
+
+
+
+

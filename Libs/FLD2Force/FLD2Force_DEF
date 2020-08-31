@@ -1,0 +1,6 @@
+      real ::  fldU(lx1,ly1,lz1,lelt,3,maxOrder)
+      real ::  fldP(lx2,ly2,lz2,lelt,maxOrder)
+      real ::  fldT(lx1,ly1,lz1,lelt,ldimt,maxOrder)
+      
+      COMMON /FLD2Force_COM/ fldU, fldP, fldT
+

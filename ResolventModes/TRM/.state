@@ -1,0 +1,6 @@
+SOURCE_ROOT=/Users/eduardomartini/Nek5000
+FC=mpif77
+FFLAGS=-mavx2 -fdefault-real-8 -fdefault-double-8 -cpp
+CC=mpicc
+CFLAGS=-mavx2
+PPLIST= MPI UNDERSCORE TIMER

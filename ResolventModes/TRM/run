@@ -1,0 +1,113 @@
+#!/bin/bash
+if [ $# -lt 4 ]; then
+  echo 'Use as :  ./run [reafile] [nproc] [firstIter] [lastIter] [clearTimeHistories(optional)]'
+
+fi
+
+if [ ! -f $1.rea   ]; then
+      echo "Missing rea file."
+      exit
+fi
+
+if [  ! -f $1.map  ]; then
+      echo "Missing map file."
+      exit
+fi
+
+reaFile=$1
+nproc=$2
+iStart=$3
+iEnd=$4
+clearFiles=$5
+
+if [ "$clearFiles" = "y" ]; then
+      echo "Clearing files after use..."
+else
+      echo "NOT Clearing files after use..."
+fi
+
+
+for i in $(seq -f "%02.0f" $iStart $iEnd ); do
+	# Set up run
+
+	params=$(tail -n +2 params.input)
+	echo "$i " > params.input
+	echo "$params" >> params.input
+	
+	if [ $i -gt 0 ]; then
+        PrevIteration="Iter$(printf "%02.0f" $((i-1)) )"
+        echo "Setting up previous run as external force..." $PrevIteration
+        ls $PrevIteration/FIR/fir${reaFile}0.f????? | tac > ForceFLDLists.txt
+    else
+        echo > ForceFLDLists.txt 
+    fi
+      
+	echo 'Running Iter ' $i
+	# Running Iteration
+	nekmpi $reaFile $nproc > log
+	
+	rm ${reaFile}0.f????? {c,s}00${reaFile}0.f?????
+
+	#--- Remove runs with small amplitude
+    # script that identifies unnecessary files and removes them
+    echo > filesToRename.txt
+	ls i01${reaFile}0.f????? > FileList.txt
+    octave-cli --eval "pkg load signal ; fileList='FileList.txt';normFile='runNormSaved.txt'; Nek_ClearFiles; exit;" 
+	
+    #remove these files
+    while read p; do
+        echo "$p"
+        mv $p $p.lowAmp
+    done <filesToRename.txt
+
+	#Move Files 
+	echo "Moving Files..." 
+	mkdir Iter$i
+	mv {i,c,s}*${reaFile}0.f* Pert*List.txt runCompleted ForceFLDLists.txt log* pertNorm.txt  freqNorm.txt   Iter$i
+	
+	#clear prevRun Files
+	if [ "$clearFiles" = "y" ] && [ $i -gt 0 ]; then
+        rm  $PrevIteration/fir${reaFile}0.f* $PrevIteration/fir${reaFile}0.f*
+    fi 
+	
+	#Get Filter 
+    octave-cli -W --eval "ampListFile='Iter$i/freqNorm.txt';pkg load signal;Nek_GetFilter;exit"
+	#Apply Filter 
+	echo "Applying Filter with Nek..." 
+	
+	#replace the first line of params
+	params=$(tail -n +2 params.input)
+	echo "-1 " > params.input
+	echo "$params" >> params.input
+
+	ls Iter$i/i01${reaFile}0.f????? > FIR_FileList.txt
+	nekmpi $reaFile $nproc > logFIR
+    
+	#remove runs with small amplitude
+	ls fir${reaFile}0.f????? > FIR_FilteredFileList.txt
+
+    octave-cli --eval "pkg load signal ; fileList='FIR_FilteredFileList.txt';normFile='runNormFiltered.txt'; Nek_ClearFiles; exit;" 
+    
+    while read p; do
+        echo "$p"
+        mv $p $p.lowAmp
+    done <filesToRename.txt
+	
+	rm {c,s}01${reaFile}0.f?????
+	rename -e "s/00${reaFile}/01${reaFile}/"  {c,s}??${reaFile}*
+#	rename -e "00${reaFile}" "01${reaFile}"  {c,s}??${reaFile}*
+	mkdir Iter$i/FIR
+	mv {f,c,s}*${reaFile}0.f* log* FIR_FileList.txt FIR_Coefs.txt  plot_filter* freqNorm.txt  plot_norm* runCompleted runNormFiltered.txt Iter$i/FIR
+
+	#clear unfiltered Files
+	if [ "$clearFiles" = "y" ]; then
+        rm  Iter$i/i01${reaFile}0.f*
+    fi 
+		
+	#Setting up next run
+	PrevIteration="Iter${i}"
+done
+
+octave-cli --eval "pkg load signal ; reaFile='$reaFile';computeGains; exit;" 
+    	
+

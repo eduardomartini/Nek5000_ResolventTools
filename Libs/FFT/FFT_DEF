@@ -1,0 +1,24 @@
+
+      real vx_FFTs_c(lx1*ly1*lz1*lelt,nmaxFreq)
+      real vy_FFTs_c(lx1*ly1*lz1*lelt,nmaxFreq)
+      real vz_FFTs_c(lx1*ly1*lz1*lelt,nmaxFreq)
+      real vx_FFTs_s(lx1*ly1*lz1*lelt,nmaxFreq)
+      real vy_FFTs_s(lx1*ly1*lz1*lelt,nmaxFreq)
+      real vz_FFTs_s(lx1*ly1*lz1*lelt,nmaxFreq)
+
+
+      real vxp_FFTs_c(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+      real vyp_FFTs_c(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+      real vzp_FFTs_c(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+      real vxp_FFTs_s(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+      real vyp_FFTs_s(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+      real vzp_FFTs_s(lx1*ly1*lz1*lelt,lpert,nmaxFreq)
+
+      
+      COMMON /FFTs/ 
+     $     vx_FFTs_c  ,vy_FFTs_c   ,vz_FFTs_c,
+     $     vx_FFTs_s  ,vy_FFTs_s   ,vz_FFTs_s,
+     $     vxp_FFTs_c ,vyp_FFTs_c ,vzp_FFTs_c,
+     $     vxp_FFTs_s ,vyp_FFTs_s ,vzp_FFTs_s
+
+

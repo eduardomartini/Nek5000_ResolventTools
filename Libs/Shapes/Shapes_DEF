@@ -1,0 +1,10 @@
+      integer, parameter :: shapesNParams  = 9
+      integer, parameter :: nmaxShapes     = 230
+      integer, parameter :: shapeTypeLen   = 3      
+      integer nShapes
+      real shapeParams(nmaxShapes,shapesNParams)
+      character(len=shapeTypeLen), 
+     $         dimension(nmaxShapes):: shapeType
+c      character shapeType(shapesNParams,3)
+      
+      COMMON /shapes/ shapeParams , shapeType,nShapes
