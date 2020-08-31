@@ -5,6 +5,7 @@ cmd="ln -s "
 $cmd ../../Libs/FFT/FFT.f .
 $cmd ../../Libs/FFT/FFT_DEF .
 $cmd ../../Libs/FIR/FIR.f .
+$cmd ../../Libs/FIR/FIR_DEF .
 $cmd ../../Libs/FLD2Force/FLD2Force.f .
 $cmd ../../Libs/FLD2Force/FLD2Force_DEF .
 $cmd ../../Libs/Load_FLD/Load_FLD_To.f .
