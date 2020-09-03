@@ -81,14 +81,15 @@ for iif =  iFreqsList
     
     % Prepares for next run
     if nCurrIter < k+p % direct Arnoldi Iteration, just saves the next ouput
-        fields(1:3)='U  ';
+        fields_U=fields;
+        fields_U(1:3)='U  ';
         fexp = (fk./ m) ;
         filelocOut = sprintf('ForceFiles/extHarmForceCos0.f%05.0f',iif);         
         writenek(filelocOut,reshape(real(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields,emode,wdsz,etag);
+                            lr1,elmap,freq,istep,fields_U,emode,wdsz,etag);
         filelocOut = sprintf('ForceFiles/extHarmForceSin0.f%05.0f',iif);         
         writenek(filelocOut,reshape(imag(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields,emode,wdsz,etag);
+                            lr1,elmap,freq,istep,fields_U,emode,wdsz,etag);
     else % IRA iteration, performs QR decomposition and saves the current subspace.
          %  NOT IMPLEMENTED 
         mu = 0;
