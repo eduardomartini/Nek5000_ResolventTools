@@ -1,0 +1,267 @@
+c-----------------------------------------------------------------------
+C
+C  USER SPECIFIED ROUTINES:
+C
+C     - boundary conditions
+C     - initial conditions
+C     - variable properties
+C     - local acceleration for fluid (a)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.
+
+
+c ============================================================================
+c           Modules used for obtainind and using Resolvent-based control 
+
+
+      include 'SavePerturbations.f' ! Module for saving perturbations to disk
+      include 'Load_FLD_To.f'       ! Module for loading flow snapshots to an array memory
+      include 'FLD2Force.f'         ! Uses the abobe module to use flow snapshots as an external force.
+      include 'Shapes.f'            ! Defines domain "Shapes", used as support for sensors and actuators
+      include 'Control.f'           ! Control module based on a control law based on the convolution of a control Kernel and sensor readings
+c ============================================================================
+
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      use FLD2Force
+      use Control
+      use Shapes
+      include 'SIZE'
+      include 'TOTAL'      
+      include 'NEKUSE'
+      real fffx,fffy,fffz,tmp_rand(2)
+      logical,save :: firstCall = .true.
+      real, save :: rms = 0
+      real tmp
+      integer , save :: lastISTEP = -1 , icount = 0
+      integer ix,iy,iz, eg,e,ijke ,ntot , nloc,n
+      integer currIter,sensRange(2),actRange(2)
+      real f_amp 
+      INTEGER, DIMENSION(:), ALLOCATABLE :: seed
+      COMMON /ResMode/ currIter,sensRange,actRange
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+      e = gllel(eg)
+      f_amp = 1e-3
+      if (firstCall) then
+        CALL RANDOM_SEED(size = n)
+        ALLOCATE(seed(n))
+        seed=nidd
+        CALL RANDOM_SEED(PUT = seed)
+c        call random_init(.true., .true.)
+        DEALLOCATE(seed)
+        firstCall=.false.
+      endif
+      
+C     ============  Upstream random distrubances ===========
+      tmp = bm1(ix,iy,iz,e)
+      call random_number(tmp_rand)
+      ffx= 2*(tmp_rand(1)-0.5)*3/sqrt(dt*bm1(ix,iy,iz,e))*f_amp
+C         ffx= sqrt(-2*log(tmp_rand(1)))*cos(2*pi*tmp_rand(2))/sqrt(dt)
+      call random_number(tmp_rand)
+C         ffy= sqrt(-2*log(tmp_rand(1)))*cos(2*pi*tmp_rand(2))/sqrt(dt)
+      ffy= 2*(tmp_rand(1)-0.5)*3/sqrt(dt*bm1(ix,iy,iz,e))*f_amp
+      call random_number(tmp_rand)
+C         ffz= sqrt(-2*log(tmp_rand(1)))*cos(2*pi*tmp_rand(2))/sqrt(dt)
+      ffz= 2*(tmp_rand(1)-0.5)*3/sqrt(dt*bm1(ix,iy,iz,e))*f_amp
+      
+      if (x>-5  ) then
+          !Filters external forces for x > -5, as Pff(x,x') = h(x-5)delta(x-x') is assumed.
+          ffx = 0 
+          ffy = 0 
+          ffz = 0 
+      endif
+
+      
+C     ============  Actuator forces ===========
+      do i=1,(actRange(2)-actRange(1)+1) ! loop from 1 to the number of actuators
+        call getShape(actRange(1)-1+i,x,y,z,fffx,fffy,fffz) ! get the shape of the i-th actuator
+        
+        ! Add actuation to the external forces
+        ffx = ffx + Control_Actuation(i)*fffx
+        ffy = ffy + Control_Actuation(i)*fffy
+        ffz = ffz + Control_Actuation(i)*fffz
+      enddo
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      use FLD2Force
+      use Control
+      use Shapes
+      implicit none
+      include 'SIZE'
+      include 'TSTEP'           ! ISTEP
+      include 'INPUT'           ! PARAM
+      include 'SOLN'            ! V[XYZ]
+      include 'GEOM'            ! xm1,ym1
+      include 'ADJOINT'
+      include 'MASS'
+
+      real,external::glsum
+      integer ntot,i,j 
+      real pertNorm , maxnorm 
+      character(len=100) fileAdd1 
+      real readings(30)
+      real, save :: meanFlowU(lx1,ly1,lz1,lelv)
+      real, save :: meanFlowV(lx1,ly1,lz1,lelv)
+      real, save :: mfReadings(30)
+      logical, save :: firstSave = .true. 
+      integer currIter,sensRange(2),actRange(2)
+      COMMON /ResMode/ currIter,sensRange,actRange
+      ntot = nx1*ny1*nz1*nelt
+      
+      ! Initialize control on the first time step.
+      if (istep ==0) then
+         if (NIO==0) write(*,*) 'Init Control Module...  '
+         fileAdd1 = 'Kernel.input' ! Control parameter file. Includes number of sensors, actuators, delta t and control laws.
+         call ControlInit(fileAdd1)
+         call copy(meanFlowU,VX,ntot)
+         call copy(meanFlowV,VY,ntot)
+         mfReadings=ProjectOnShapes(0)
+      endif 
+        
+      write(*,*) 'Update Control Module...  '      
+      readings=ProjectOnShapes(0)
+      if(nio==0) then
+        write(*,*) readings(1:3)
+        write(*,*) mfReadings(1:3)
+      endif
+      readings=ProjectOnShapes(0)
+      readings=readings-mfReadings   
+      if(nio==0) then
+        write(*,*) readings(1:3)
+      endif
+
+      call ControlUpdateReadings(
+     $       time,readings(sensRange(1):sensRange(2)))
+
+      ! Update sensor history on the "Control" module 
+      call Control_CalcActuations()
+      ! Print the "Control" module  sensor history  for debug.
+      call ControlPrintReadingsHist()
+      ! Print the "Control" module  current actuations.
+      call ControlPrintActuation()
+      ! Save the "Control"  module history (actuation and readings). Useful for debug.
+      call SaveControlHist()
+      
+
+      if (NIO>=-1) write(*,*) 'Computing run Norm...', ntot
+      pertNorm=0
+      do i=1,ntot 
+        if (xm1(i,1,1,1)>0)
+     $    pertNorm = pertNorm + 
+     $     ( (vx(i,1,1,1)-0*meanFlowU(i,1,1,1))**2  +
+     $       (vy(i,1,1,1)-0*meanFlowV(i,1,1,1))**2 )*bm1(i,1,1,1)
+      enddo
+      pertNorm = glsum(pertNorm,1)
+      pertNorm = sqrt(pertNorm)
+            
+      ! Writes current perturbation norm to file
+      if (NIO==0) then
+        if (istep == 0) then
+          open (unit=98, file='runNorm.txt',
+     $            status='replace',action='write')
+        else
+          open (unit=98, file='runNorm.txt',
+     $        position="append" ,status='old',action='write')
+        endif
+        write(98,*) time , pertNorm 
+        close(98)
+      endif
+      
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+c     NOTE ::: This subroutine MAY NOT be called by every process
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+            ux = y*(1.0-y)*4.0
+            uy=0.0
+            uz=0.0
+            temp=0.0      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      use Shapes
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      ux = 0.0
+      uy = 0.0
+      uz = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      use Shapes
+      include 'SIZE'
+      include 'TOTAL'
+      character(len=100) fileAdd1 
+      integer currIter,sensRange(2),actRange(2)
+      COMMON /ResMode/ currIter,sensRange,actRange
+      
+      ! Reads the run type, as well as sensor and actuator ranges 
+      ! i.e. range 1-3 indicates that shapes 1,2 and 3 are used.  
+      close(98)
+      open (unit=98, file='sensRange.txt',
+     $                status='old',action='read')
+      read(98,*) sensRange
+      close(98)
+      open (unit=98, file='actRange.txt',
+     $                status='old',action='read')
+      read(98,*) actRange
+      close(98)      
+      
+      ! Initi "Shapes" module. 'Shapes.txt' provides a parametric list of shapes.
+      fileAdd1='shapes.txt'
+      call ReadShapesFile(fileAdd1)
+      
+c     call platform_timer(0) ! not too verbose
+c     call platform_timer(1) ! mxm, ping-pong, and all_reduce timer
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'      
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+
+

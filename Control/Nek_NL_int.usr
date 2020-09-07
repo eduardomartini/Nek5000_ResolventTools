@@ -1,0 +1,121 @@
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+c     e = gllel(eg)
+
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+c      IMPLICIT none
+      include 'SIZE'
+      include 'TOTAL'
+      integer  i,e,eg, ntot1
+      real dudt
+      
+      
+      ntot1 = NX1*NY1*NZ1*NELV
+c     calculate L2 norms
+      do i=1,ntot1
+         dudt = dudt + (VX(i,1,1,1) - VXlag(i,1,1,1,1))**2
+         dudt = dudt + (VY(i,1,1,1) - VYlag(i,1,1,1,1))**2
+      enddo
+      
+      dudt=sqrt(glsum(dudt,1))/dt
+
+      if (dudt<1e-8) then
+            if (NIO==0) write(*,*) 'Basestate found!'
+            time=0
+            istep=0
+            call outpost(vx,vy,vz,pr,t,'bf_')
+            call exitt
+      endif
+      if (NIO==0) write(*,*) '|DU_Dt|2 = ',dudt 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      ux = y*(1.0-y)*4.0
+      uy = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      ux = 0
+      uy = 0
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+c-----------------------------------------------------------------------

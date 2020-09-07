@@ -1,0 +1,13 @@
+#!/bin/bash
+genbox  << EOF
+$1.box
+EOF
+mv box.rea 
+bfs.rea
+
+
+genmap << EOF
+bfs
+
+EOF
+

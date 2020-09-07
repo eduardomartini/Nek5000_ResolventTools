@@ -1,0 +1,132 @@
+#!/bin/bash
+if [ $# -lt 3 ]; then
+      echo ""
+      echo "USAGE"
+      echo -e "Runs to obtain data for Kernel construction "
+      echo -e "\tSyntax  :  ./run [reaFile] [nproc] [runtype] [rankType] [ishape] [range1 range2] "
+      echo -e "\t\trunType == dir[-adj[-dir]]   :  direct[-adjoint[-direct]] runs"
+      echo -e "\t\trunType == adj[-dir[-adj]]   :  adjoint[-direct[-adjoint]] runs"
+      echo -e "\t\trankType == full : full rank assumed (no need to specify range1 and range2)"
+      echo -e "\t\trankType == low  : low rank assumed (range1 and range2 required)"      
+      echo ""
+      echo -e "Runs for control of the linear/non-linear system"
+      echo -e "\tSyntax  :  ./run [reaFile] [nproc] [runtype] [kernelFile]  [sensorRange1] [sensorRange2] [actRange1] [actRange2]  "
+      echo -e "\t\tcontrolType == lincon  : control of the linearized problem."
+      echo -e "\t\tcontrolType == nlincon : control of the non-linear problem."
+      echo -e "\t\tkernelFile  : kernel.input file to be used for control"
+      echo -e "\t\t[sensorRange1]/[sensorRange2] : Range of shapes to be used as sensors"
+      echo -e "\t\t[actRange1]/[actRange2] : Range of shapes to be used as actuators"
+      echo  
+      exit
+fi
+
+tolerance="1e-3" #default tolerance for the direct/adjoint runs
+echo "Using the standard tolerance of $tolerance for the direct/adjoint runs."
+
+reaFile=$1
+nproc=$2
+runType=$3
+
+
+if [ $runType = "lincon" ] || [ $runType = "nlincon" ]; then
+      ## PERFORMS A CONTROL RUN
+      #Control run
+      kernel=$4
+      runflag=5
+      isensrange_start=$5
+      isensrange_end=$6
+      iactrange_start=$7
+      iactrange_end=$8
+      folder=Run_${runType}_${kernel//.input}
+
+      echo "Running $runType run on folder" $folder
+      mkdir $folder 
+      cp bf_* nek5000 shapes.input $reaFile.{rea,map}  $(tail +2 $kernel) $folder
+      cp $kernel $folder/ControlKernel.input
+      cd $folder 
+
+
+      echo  $runflag               >  params.input
+      echo  $isensrange_start $isensrange_end       >> params.input
+      echo  $iactrange_start  $iactrange_end        >> params.input
+      echo  $tolerance             >> params.input
+
+      pwd
+      nekmpi $reaFile $nproc &> log  
+      cd ..
+
+elif [ $runType = "adj" ] || [ $runType = "dir" ] || [ $runType = "adj-dir" ] || [ $runType = "dir-adj" ] || [ $runType = "dir-adj-dir" ] || [ $runType = "adj-dir-adj" ]; then  
+      ## PERFORMS THE DIR/ADJ RUNS
+      rankType=$4
+      ishape=$5
+      folder=Runs_${ishape}_${runType}_${rankType}      
+
+      if [ $rankType = "full" ]; then
+            range_start=0
+            range_end=0
+      elif [ $rankType = "low" ]; then
+            range_start=$6
+            range_end=$7
+      fi
+
+      #set up run flags
+      if   [ $runType       = "dir" ]; then # dir system
+                  runflag=1 
+      elif [ $runType       = "adj" ]; then # adj system
+                  runflag=-1 
+      elif [ ${runType: -3} = "dir" ]; then # adj-dir or dir-adj-dir system
+            if [ $rankType = "full" ]; then
+                  runflag=2
+            else
+                  runflag=3
+            fi
+      elif [ ${runType: -3} = "adj" ] ; then # dir-adj or adj-dir-adj system
+            if [ $rankType = "full" ]; then
+                  runflag=-2
+            else
+                  runflag=-3
+            fi
+      fi
+
+      mkdir $folder
+      echo "Running $runType run" 
+      cp bf_* nek5000 shapes.input $reaFile.{rea,map} $folder
+      cd $folder 
+
+      if [ ${#runType} -gt 3 ]; then 
+            echo " Checking if previous run is available "
+            prevRunType=${runType:: ${#runType}-4}
+            prevfolder=Runs_${ishape}_${prevRunType}_${rankType}      
+            if [ ! -d ../$prevfolder  ]; then 
+                  echo "Previous direct run not found, running it before the adjoint run"
+                  cd ..
+                  ./run $reaFile $nproc $prevRunType $rankType $ishape $range_start $range_end 
+                  cd $folder  
+                  echo "Done"
+            else
+                  echo "Previous run found!"
+            fi
+
+            if [ $rankType = "full" ]; then
+                  ls ../$prevfolder/i01${reaFile}0.f????? | sort | tac > ForceFLDLists.txt
+            else
+                  tac ../$prevfolder/ProjShapes_01.dat | sed '$d' > TimeSeries.txt      
+            fi
+      fi
+
+      #Run !
+
+      echo  $runflag               >  params.input
+      echo  $ishape $ishape        >> params.input
+      echo      0             0    >> params.input 
+      echo  $tolerance             >> params.input
+
+      pwd
+      nekmpi $reaFile $nproc &> log  
+      cd ..
+      	
+else
+      echo "Invalid runType selected ; " $runType
+      exit
+fi
+
