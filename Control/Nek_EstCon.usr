@@ -238,9 +238,9 @@ c-----------------------------------------------------------------------
         ! Use the shapes module to obtain current sensor readings. Print them for debug purposes.
         if (npert==0) then
           readings=ProjectOnShapes(0) 
+          readings=readings-mfReadings   
         else
           readings=ProjectOnShapes(1)
-          readings=readings-mfReadings   
         endif
   
         if (NIO==0) write(*,*) 'Current Readings ',
@@ -275,8 +275,15 @@ c-----------------------------------------------------------------------
       pertNorm   = 0
       pertNormxp = 0
       if (npert==0) then
-        ! for the no linear problem subtract the baseflow to obtain perturbations
+        ! for the non-linear problem subtract the baseflow to obtain perturbations
         do i=1,ntot
+          if (xm1(i,1,1,1) >= 0 ) then
+           pertNormXp = pertNormXp+((vx(i,1,1,1)-meanFlow(i,1))**2+
+     $                              (vy(i,1,1,1)-meanFlow(i,2))**2)*
+     $                              bm1(i,1,1,1)
+           if (ldim==3) pertNormXp=pertNormXp
+     $                 +(vz(i,1,1,1)-meanFlow(i,3))**2*bm1(i,1,1,1)
+          endif
           pertNorm = pertNorm+((vx(i,1,1,1)-meanFlow(i,1))**2+
      $                         (vy(i,1,1,1)-meanFlow(i,2))**2)*
      $                         bm1(i,1,1,1)
@@ -347,11 +354,16 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-      if (JP>0) then
-            ux=0.0
-            uy=0.0
-            uz=0.0
-            temp=0.0
+      if (JP==0) then
+        ux=4*y*(1-y)
+        uy=0.0
+        uz=0.0
+        temp=0.0
+      else
+        ux=0.0
+        uy=0.0
+        uz=0.0
+        temp=0.0
       endif
       
       return

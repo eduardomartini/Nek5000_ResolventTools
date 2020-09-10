@@ -7,18 +7,18 @@ clear all
 % shape indexes for sensors, actuators and targets. Leave targets empy for
 % full rank
 iy = [ 2  ]; ny = length(iy);
-ia = [ 28 ]; na = length(ia);
-iz = [  5  ]; nz = length(iz);
+ia = [ 30 ]; na = length(ia);
+iz = [ 2 ]; nz = length(iz);
 %Sensor noise and actuation penalty : positive values for absolute value,
 %negative to relative values
 N=-1e-2;
-P=1e-2;
+P=-1e-2;
 % Discretization used for control Law. Input Tmax and dt. 
 Tmax = 800;
-dt   = 0.005;
+dt   = 0.01;
 
 % Other flags
-actuatorDataFrom='adjoint';% adjoint : target and sensor adjoint runs, direct : actuator direct runs
+actuatorDataFrom='direct';% adjoint : target and sensor adjoint runs, direct : actuator direct runs
 computeTargetsCSD = false;
 computeGains      = false;
 
@@ -106,7 +106,7 @@ else
             xlabel('$t$');ylabel('$R_{az}^\dagger R_{fz}R_{fy}^\dagger$');
 end
 %% Get matrices
-HGs = getHGs(DATA,-1e-2,-1e-2,-1i,1e-6); 
+HGs = getHGs(DATA,N,P,-1i,1e-6); 
 %%
 figure;
     subplot(211)

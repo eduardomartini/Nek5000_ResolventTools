@@ -41,13 +41,12 @@ c
 c     Reads parameter file, creates output files, performs
 c     sensors readings calculations, and outputs readings.
 c========================================================
-
       subroutine ControlInit(controlLawParamFile)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-      character(LEN=40) controlLawFile
-      character(LEN=40) controlLawParamFile
+      character(LEN=100) controlLawFile
+      character(LEN=100) controlLawParamFile
       integer i , j ,k  ,Reason ,tmp
       logical endOfFile
 

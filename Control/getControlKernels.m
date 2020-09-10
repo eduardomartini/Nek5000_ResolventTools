@@ -1,6 +1,6 @@
 function Gamma=getControlKernels(HGs)
     
-    fprintf('Computing Estimation Kernels...');clock=tic();
+    fprintf('Computing Control Kernels...');clock=tic();
     df = HGs.freq(2) - HGs.freq(1);
     dt = HGs.t(2)    - HGs.t(1)   ;
     nt = length(HGs.t);
@@ -62,4 +62,5 @@ function Gamma=getControlKernels(HGs)
     Gamma.t    = HGs.t;
     Gamma.freq = HGs.freq;
     
-    disp([' Done in ' num2str(toc(clock)) 's']);
+    disp(['Done in ' num2str(toc(clock)) 's']);
+    disp('');

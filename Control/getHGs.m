@@ -116,5 +116,5 @@ function [HGs] = getHGs(DATA,N,P,omega0,tol)
     
     HGs.t=DATA.t;
     HGs.freq=DATA.freq;
-    fprintf('Total Time  %5.2fs ', toc(clock));
+    fprintf('Total Time  %5.2fs \n\n ', toc(clock));
 
