@@ -109,147 +109,87 @@ Gamma = getControlKernels(HGs);
 
 
 %%
-fSize=[1000,150];
-aSize=[.075,.3,.9,.65];
-
-fig_ker=figure; fig_ker.Position(3:4)=fSize;
-fig_G  =figure; fig_G.Position(3:4)=fSize;
-fig_g  =figure; fig_g.Position(3:4)=fSize;
-% fig_deb=figure; fig_deb.Position(3:4)=[1400,400];
-hold on; 
+subplotloc=getSubPlotLocations([],[0.075,0.025,0.01,0.1],[0.01,0.01],1,4);
+f=figure;
+f.Position(3:4)=[1200,600];
 
 cmap = hot(nList*2);
 % cmap = (hot(5*2));
 cmap = flip(cmap(1:end/2,:),1);
 leg={};
 
+fs1 = subplot('Position',subplotloc(1,:));
+fs2 = subplot('Position',subplotloc(2,:));
+fs3 = subplot('Position',subplotloc(3,:));
+fs4 = subplot('Position',subplotloc(4,:));
+
 
 for i= 1:nList(end)
     leg{end+1}=sprintf('$\\Delta T=%3.1e$',iendList(i)*dt_data);
-
-%     figure(fig_deb)
-%         subplot(421)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.G)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,10])
-%             xlabel('$\tau$');ylabel('$G,H$');
-%         subplot(422)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.g)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,60])
-%             xlabel('$\tau$');ylabel('$g$');
-%         subplot(423)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.Gminus)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,10])
-%             ylim([-1,5])
-%             xlabel('$\tau$');ylabel('$G_-$');
-%         subplot(424)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.Gplus)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,10])
-%             ylim([-1,5])
-%             xlabel('$\tau$');ylabel('$G_+$');
-%         subplot(425)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.Hminus)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,10])
-%             ylim([-1,5])
-%             xlabel('$\tau$');ylabel('$H_-$');
-%         subplot(426)
-%             plot(Gamma.t,(pfun(HGs_emp{i}.Hplus)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,10])
-%             ylim([-1,5])
-%             xlabel('$\tau$');ylabel('$H_+$');
-%         subplot(414)
-%             plot(Gamma.t,(pfun(Gamma_emp{i}.c)),'color',cmap(i,:)); 
-%             hold on
-%             xlim([-10,50])
-%             xlabel('$\tau$');ylabel('$\Gamma$');
-
-        figure(fig_ker)
+        subplot(fs1);
                 plot(Gamma.t,(pfun(Gamma_emp{i}.c)),'color',cmap(i,:)); 
                 hold on
                 xlim([-10,20])
                 xlabel('$\tau$');ylabel('$\Gamma$');
-        figure(fig_G)
+        subplot(fs2);
               plot(DATA.t,pfun(HGs_emp{i}.G),'color',cmap(i,:)); hold on;
                 hold on
                 xlim([-10,10])
-                xlabel('$\tau$');ylabel('$G$');
-        figure(fig_g)
+                xlabel('$\tau$');ylabel('$\mathbf G$');
+        subplot(fs3);
               plot(DATA.t,pfun(HGs_emp{i}.g),'color',cmap(i,:)); hold on;
                 hold on
                 xlim([10,40])
-                xlabel('$\tau$');ylabel('$g$');
+                xlabel('$\tau$');ylabel('$\mathbf g$');
         K_emp(:,i) = pfun(Gamma_emp{i}.c);
         
 end
 
 leg{end+1}='Analitical';
-%    figure(fig_deb)
-%     subplot(421)
-%         plot(Gamma.t,(pfun(HGs.G)),'--b'); 
-%     subplot(422)
-%         plot(Gamma.t,(pfun(HGs.g)),'--b'); 
-%     subplot(423)
-%         plot(Gamma.t,(pfun(HGs.Gminus)),'--b'); 
-%     subplot(424)
-%         plot(Gamma.t,(pfun(HGs.Gplus)),'--b'); 
-%     subplot(425)
-%         plot(Gamma.t,(pfun(HGs.Hminus)),'--b'); 
-%     subplot(426)
-%         plot(Gamma.t,(pfun(HGs.Hplus)),'--b'); 
-%     subplot(414)
-%         plot(Gamma.t,(pfun(Gamma.c)),'--b'); 
-   figure(fig_ker)
+    subplot(fs1);
         plot(Gamma.t,(pfun(Gamma.c)),':b');
         legend(leg,'Location','east');
-        ylim([-5.5,2.5]);
-        a=gca;a.Position=aSize
         xlim([-.5,15]);
         ylim([-.5,1.5]);
+        
         grid on;
-        saveas(gcf,'Emp_Gamma_Conv.fig');
-        saveas(gcf,'Emp_Gamma_Conv.eps','epsc');
-   figure(fig_G)
+    subplot(fs2);
         plot(Gamma.t,pfun(HGs.G),':b');
-        legend(leg,'Location','east');
-        a=gca;a.Position=aSize
         xlim([-10,10]);
-        ylim([-.25,.75]);
+        ylim([-.29,.75]);
         grid on;
-        saveas(gcf,'Emp_Gbig_Conv.fig');
-        saveas(gcf,'Emp_Gbig_Conv.eps','epsc');
-%         ylim([-5.5,2.5]);
-   figure(fig_g)
+    subplot(fs3);
         plot(Gamma.t,pfun(HGs.g),':b');
-        legend(leg,'Location','east');
-        a=gca;a.Position=aSize;
         grid on;
-        saveas(gcf,'Emp_gsmall_Conv.fig');
-        saveas(gcf,'Emp_gsmall_Conv.eps','epsc');
-        %         ylim([-5.5,2.5]);
+        ylim([-1,1]*2.4);
 
-% plot errors        
+% plot errors  
 
 K = pfun(Gamma.c);
 errK = K_emp-K.';
 errKNorm=sqrt(diag(errK'*errK))/norm(K);
 
-f=figure; f.Position(3:4)=fSize;
+subplot(fs4);
     T=iendList*dt_data-50;
     loglog(T,(errGNorm),'-o', ...
            T,(errgNorm),'-o', ...
            T,errKNorm,'-o', ...
            T,10*T.^-.5,'k:'       );
-       legend('$G$','$g$','$\Gamma$','$T^{-1/2}$');
+       legend('$\mathbf G$','$\mathbf g$','$\Gamma$','$T^{-1/2}$');
     xlim(iendList([1,end])*dt_data-50)
     xlabel('data length');
     ylabel('error norm ');
-    a=gca;a.Position=aSize;
     grid
-    saveas(gcf,'Emp_error_Conv.fig');
-    saveas(gcf,'Emp_error_Conv.eps','epsc');
+    
+fs1.XTickLabel="";
+fs2.XTickLabel="";
+fs3.XTickLabel="";
+fs1.FontSize=18;
+fs2.FontSize=18;
+fs3.FontSize=18;
+fs4.FontSize=18;
+fs4.YTick= 10.^[-3:0];
+    
+saveas(gcf,'Emp_Conv.fig');
+saveas(gcf,'Emp_Conv.eps','epsc');
 

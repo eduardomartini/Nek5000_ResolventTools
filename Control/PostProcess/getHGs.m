@@ -36,32 +36,32 @@ function [HGs] = getHGs(DATA,N,P,omega0,tol)
     
     fprintf('\tComputing G from Sensor adj-dir run'); c_tmp=tic;
     for iw = 1:nt
-        HGs.Ghat(:,:,iw) =  (DATA.RfyRfydhat(:,:,iw)+DATA.RfyRfydhat(:,:,iw)')/2 + N; % removes the non-hermian part of y_esthat
+        HGs.Glhat(:,:,iw) =  (DATA.RfyRfydhat(:,:,iw)+DATA.RfyRfydhat(:,:,iw)')/2 + N; % removes the non-hermian part of y_esthat
     end
     c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     
     fprintf('\tWiener-Hopf Fact of G'); c_tmp=tic;
-    [HGs.Gminushat,HGs.Gplushat]=WienerHopfDec(DATA.freq*2*pi,conj(HGs.Ghat),omega0,[],tol); % reverse factorization
-    HGs.Gminushat  = conj(HGs.Gminushat); HGs.Gplushat = conj(HGs.Gplushat);
+    [HGs.Glminushat,HGs.Glplushat]=WienerHopfDec(DATA.freq*2*pi,conj(HGs.Glhat),omega0,[],tol); % reverse factorization
+    HGs.Glminushat  = conj(HGs.Glminushat); HGs.Glplushat = conj(HGs.Glplushat);
     c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     
     % Compute "H"    
     if isfield(DATA,'RazdRaz')
         fprintf('\tComputing H from Actuator Direct-Adjoint Run'); c_tmp=tic;
         for iw = 1:nt
-            HGs.Hhat(:,:,iw)         =  DATA.RazdRazhat(:,:,iw) + P ;
+            HGs.Hlhat(:,:,iw)         =  DATA.RazdRazhat(:,:,iw) + P ;
         end        
         c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     else
         fprintf('\tComputing H from Actuator Impulse response'); c_tmp=tic;
         for iw = 1:nt
-            HGs.Hhat(:,:,iw)         =  DATA.Razhat(:,:,iw)'*DATA.Razhat(:,:,iw) + P ;
+            HGs.Hlhat(:,:,iw)         =  DATA.Razhat(:,:,iw)'*DATA.Razhat(:,:,iw) + P ;
         end    
         c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     end
     
     fprintf('\tWiener-Hopf Fact of H'); c_tmp=tic;
-    [HGs.Hplushat,HGs.Hminushat]=WienerHopfDec(DATA.freq*2*pi,HGs.Hhat,omega0,[],tol);         
+    [HGs.Hlplushat,HGs.Hlminushat]=WienerHopfDec(DATA.freq*2*pi,HGs.Hlhat,omega0,[],tol);         
     c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     
     % Compute "Ray"  and "h" 
@@ -71,46 +71,46 @@ function [HGs] = getHGs(DATA,N,P,omega0,tol)
     end
     c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     
-    HGs.G      = IFFT(HGs.Ghat);
-    HGs.Gplus  = IFFT(HGs.Gplushat);
-    HGs.Gminus = IFFT(HGs.Gminushat);
-    HGs.H      = IFFT(HGs.Hhat);
-    HGs.Hplus  = IFFT(HGs.Hplushat);
-    HGs.Hminus = IFFT(HGs.Hminushat);
+    HGs.Gl      = IFFT(HGs.Glhat);
+    HGs.Glplus  = IFFT(HGs.Glplushat);
+    HGs.Glminus = IFFT(HGs.Glminushat);
+    HGs.Hl      = IFFT(HGs.Hlhat);
+    HGs.Hlplus  = IFFT(HGs.Hlplushat);
+    HGs.Hlminus = IFFT(HGs.Hlminushat);
     
     if_hg = isfield(DATA,'RazdRfzRfydhat');
     if ~if_hg % if hg is not present, compute g and h
         fprintf('\tComputing g from Sensor adj-dir run'); c_tmp=tic;
         for iw = 1:nt
-            HGs.ghat(:,:,iw) =  DATA.RfzRfydhat(:,:,iw);
+            HGs.Grhat(:,:,iw) =  DATA.RfzRfydhat(:,:,iw);
         end
         c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
         
         fprintf('\tComputing h from Actuator Impulse response'); c_tmp=tic;
         for iw = 1:nt
-            HGs.hhat(:,:,iw)         = -DATA.Razhat(:,:,iw)';
+            HGs.Hrhat(:,:,iw)         = -DATA.Razhat(:,:,iw)';
         end
-        HGs.h      = IFFT(HGs.hhat);
-        HGs.g      = IFFT(HGs.ghat);
+        HGs.Hr      = IFFT(HGs.Hrhat);
+        HGs.Gr      = IFFT(HGs.Grhat);
         c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     else
         fprintf('\tComputing hg term from adj-dir-adj run'); c_tmp=tic;
         for iw = 1:nt
-            HGs.hghat(:,:,iw) = -DATA.RazdRfzRfydhat(:,:,iw);
+            HGs.HrGrhat(:,:,iw) = -DATA.RazdRfzRfydhat(:,:,iw);
         end
-        HGs.hg      = IFFT(HGs.hghat);
+        HGs.HrGr      = IFFT(HGs.HrGrhat);
         c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     end
     
     
     fprintf('\tPre inverting H, H_+-, G and G_-+'); c_tmp=tic();
     for iw = 1:nt
-        HGs.iHhat     (:,:,iw) = inv(HGs.Hhat     (:,:,iw));
-        HGs.iGhat     (:,:,iw) = inv(HGs.Ghat     (:,:,iw));
-        HGs.iHminushat(:,:,iw) = inv(HGs.Hminushat(:,:,iw));
-        HGs.iHplushat (:,:,iw) = inv(HGs.Hplushat (:,:,iw));
-        HGs.iGminushat(:,:,iw) = inv(HGs.Gminushat(:,:,iw));
-        HGs.iGplushat (:,:,iw) = inv(HGs.Gplushat (:,:,iw));
+        HGs.iHlhat     (:,:,iw) = inv(HGs.Hlhat     (:,:,iw));
+        HGs.iGlhat     (:,:,iw) = inv(HGs.Glhat     (:,:,iw));
+        HGs.iHlminushat(:,:,iw) = inv(HGs.Hlminushat(:,:,iw));
+        HGs.iHlplushat (:,:,iw) = inv(HGs.Hlplushat (:,:,iw));
+        HGs.iGlminushat(:,:,iw) = inv(HGs.Glminushat(:,:,iw));
+        HGs.iGlplushat (:,:,iw) = inv(HGs.Glplushat (:,:,iw));
     end
     c_tmp=toc(c_tmp);fprintf(', completed in %5.2fs \n', c_tmp);
     

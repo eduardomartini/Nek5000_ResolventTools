@@ -12,8 +12,7 @@ function Tu=getEstimationKernels(HGs)
     % non-causal estimation
     nt = length(HGs.t);
     for iw=1:nt
-%         Tu.nchat(:,:,iw)= HGs.ghat(:,:,iw)*inv(HGs.Ghat(:,:,iw));
-        Tu.nchat(:,:,iw)= HGs.ghat(:,:,iw)*HGs.iGhat(:,:,iw);
+        Tu.nchat(:,:,iw)= HGs.Grhat(:,:,iw)*HGs.iGlhat(:,:,iw);
     end
     % truncated non-causal estimation
     Tu.nc                =  IFFT(Tu.nchat);
@@ -23,8 +22,7 @@ function Tu=getEstimationKernels(HGs)
 
     % causal estimation
     for iw = 1:nt
-%         RHS_hat(:,:,iw) = HGs.ghat(:,:,iw) *inv(HGs.Gminushat(:,:,iw));
-        RHS_hat(:,:,iw) = HGs.ghat(:,:,iw) *HGs.iGminushat(:,:,iw);
+        RHS_hat(:,:,iw) = HGs.Grhat(:,:,iw) *HGs.iGlminushat(:,:,iw);
     end
     RHS = IFFT(RHS_hat);
     RHSm=RHS;
@@ -32,13 +30,11 @@ function Tu=getEstimationKernels(HGs)
     RHShatm =FFT(RHSm);
 
     for iw = 1:nt
-%         Tu.chat(:,:,iw) = RHShatm(:,:,iw) *inv(HGs.Gplushat(:,:,iw));
         Tu.chat(:,:,iw) = RHShatm(:,:,iw) *HGs.iGplushat(:,:,iw);
     end
     Tu.c = IFFT(Tu.chat);
-%     Tu.c (:,:,end/2:end) = 0;
-
     Tu.t    = HGs.t;
     Tu.freq = HGs.freq;
+
     disp([' Done in ' num2str(toc(clock)) 's']);
     

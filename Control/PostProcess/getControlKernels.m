@@ -12,11 +12,11 @@ function Gamma=getControlKernels(HGs)
     % non-causal control
     if isfield(HGs,'hghat')
         for iw = 1:nt
-            Gamma.nchat(:,:,iw)= HGs.iHhat(:,:,iw)*HGs.hghat(:,:,iw)*HGs.iGhat(:,:,iw);        
+            Gamma.nchat(:,:,iw)= HGs.iHlhat(:,:,iw)*HGs.HrGrhat(:,:,iw)*HGs.iGlhat(:,:,iw);        
         end
     else
         for iw=1:nt
-            Gamma.nchat(:,:,iw)= HGs.iHhat(:,:,iw)*HGs.hhat(:,:,iw)*HGs.ghat(:,:,iw)*HGs.iGhat(:,:,iw);
+            Gamma.nchat(:,:,iw)= HGs.iHlhat(:,:,iw)*HGs.Hrhat(:,:,iw)*HGs.Grhat(:,:,iw)*HGs.iGlhat(:,:,iw);
         end
     end
     
@@ -29,12 +29,11 @@ function Gamma=getControlKernels(HGs)
     % causal control
     if isfield(HGs,'hghat')
         for iw = 1:nt
-            RHS_hat(:,:,iw)= HGs.iHminushat(:,:,iw)*HGs.hghat(:,:,iw)*HGs.iGminushat(:,:,iw);        
+            RHS_hat(:,:,iw)= HGs.iHlminushat(:,:,iw)*HGs.HrGrhat(:,:,iw)*HGs.iGlminushat(:,:,iw);        
         end
     else
         for iw = 1:nt
-            RHS_hat(:,:,iw) = HGs.iHminushat(:,:,iw)*HGs.hhat(:,:,iw)*HGs.ghat(:,:,iw) *HGs.iGminushat(:,:,iw);
-    %         RHS_hat(:,:,iw) = inv(HGs.Hminushat(:,:,iw))*HGs.hhat(:,:,iw)*HGs.ghat(:,:,iw) *inv(HGs.Gminushat(:,:,iw));
+            RHS_hat(:,:,iw) = HGs.iHlminushat(:,:,iw)*HGs.Hrhat(:,:,iw)*HGs.Grhat(:,:,iw) *HGs.iGlminushat(:,:,iw);
         end
     end
     RHS = IFFT(RHS_hat);
@@ -43,8 +42,7 @@ function Gamma=getControlKernels(HGs)
     RHSmhat = FFT(RHSm);
 
     for iw = 1:nt
-%         Gamma.chat(:,:,iw) = inv(HGs.Hplushat(:,:,iw))*RHSmhat(:,:,iw) *inv(HGs.Gplushat(:,:,iw));
-        Gamma.chat(:,:,iw) = HGs.iHplushat(:,:,iw)*RHSmhat(:,:,iw) *HGs.iGplushat(:,:,iw);
+        Gamma.chat(:,:,iw) = HGs.iHlplushat(:,:,iw)*RHSmhat(:,:,iw) *HGs.iGlplushat(:,:,iw);
     end
     Gamma.c = IFFT(Gamma.chat);
     

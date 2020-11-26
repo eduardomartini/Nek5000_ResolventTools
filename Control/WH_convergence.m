@@ -4,8 +4,8 @@
 
 set(0,'defaulttextInterpreter'  ,'latex');
 set(0,'defaultlegendInterpreter','latex'); 
-set(0,'defaultAxesFontsize'     ,14) ;
-set(0,'defaultLegendFontsize'   ,16) ;
+set(0,'defaultAxesFontsize'     ,18) ;
+set(0,'defaultLegendFontsize'   ,18) ;
 set(0,'defaultLineLineWidth'    ,3 ) ;
 set(0,'DefaultLineMarkerSize'   ,8 ) ;
 
@@ -30,6 +30,8 @@ folder = './'; %folder where the results are stored.
 
 % Discretization used for control Law. Input Tmax and dt. 
 Tmax = 800;
+figure
+subloc = getSubPlotLocations([],[0.075,0.075,0.025,0.075],[0.05,0.1],2,4);
 for dt   = [0.5,0.1,0.05,0.02,0.01];    
 nt   = round(Tmax/dt); 
 Tmax = nt*dt;
@@ -39,7 +41,8 @@ df   = 1/t(end);
 freq = getFreqVec (t);
 freqS= fftshift(freq);
 
-[DATA,~]= readData(ts,folder,iy,ia,iz,actuatorDataFrom,true);
+% [DATA,~]= readData(ts,folder,iy,ia,iz,actuatorDataFrom,true);
+DATA = readData1(ts,folder,iy,ia,iz,true,actuatorDataFrom)
 
 Wh_facTime=tic();
 
@@ -47,32 +50,39 @@ HGs = getHGs(DATA,1e-4,1e-3,-1i,1e-6);
 Gamma = getControlKernels(HGs);
 WHtime = toc(Wh_facTime);
 
-figure(1);
-    subplot(321)
+    subplot('Position',subloc(4,:));
+%     subplot(424)
         plot(HGs.t,pfun(HGs.Hminus),'-') ;
         hold on;
         ylabel('$H_-$')
         xlim([-1,1]*100)
         xlabel('t');
-    subplot(322)
+        a=gca;
+        a.YAxisLocation='right';
+    subplot('Position',subloc(6,:));
+%    subplot(426)
         plot(HGs.t,pfun (HGs.Hplus),'-')
         hold on;
         ylabel('$H_+$')
         xlim([-1,1]*100)
         xlabel('t');
-    subplot(323)
+        a=gca;a.YAxisLocation='right';
+    subplot('Position',subloc(3,:));
+%    subplot(423)
         plot(HGs.t,(pfun(HGs.Gminus)),'-')
         hold on;
         ylabel('$G_-$');
         xlim([-1,1]*10)
         xlabel('t');
-    subplot(324)
+    subplot('Position',subloc(5,:));
+%    subplot(425)
         plot(HGs.t,(pfun (HGs.Gplus)),'-')
         hold on;
         ylabel('${G}_+$');
         xlim([-1,1]*10)
         xlabel('t');
-    subplot(313)        
+    subplot('Position',subloc(7,:));
+%    subplot(414)        
         plot(Gamma.t,pfun(Gamma.c));
         hold on;
         ylabel('$\Gamma_c$');
@@ -82,3 +92,18 @@ figure(1);
         legend(leg);
         disp(WHtime)
 end
+    subplot('Position',subloc(1,:));
+%    subplot(421)
+        plot(HGs.t,pfun(HGs.H),'k-') ;
+        hold on;
+        ylabel('$G$')
+        xlim([-1,1]*100)
+        xlabel('t');
+    subplot('Position',subloc(2,:));
+%    subplot(422)
+        plot(HGs.t,pfun (HGs.G),'k-')
+        hold on;
+        ylabel('$H$')
+        xlim([-1,1]*100)
+        xlabel('t');
+        a=gca;a.YAxisLocation='right';
