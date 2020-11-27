@@ -221,7 +221,7 @@ c========================================================
       ! https://en.wikipedia.org/wiki/Finite_difference_coefficient#Central_finite_difference
       ! Wikipedia, I known....
       if (xout>=x(3) .and. xout<=x(4) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(3)
        xb = x(4)
        
@@ -235,7 +235,7 @@ c========================================================
        ybpp = (-y(6)+16*y(5)-30*y(4)+16*y(3)-y(2) )/(12*h**2); ! 4-th order centered finite differences
       
       elseif (xout>=x(2) .and. xout<=x(3) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(2)
        xb = x(3)
        
@@ -248,7 +248,7 @@ c========================================================
        ybp  = (-y(5) +8*y(4)         -8*y(2)+y(1) )/(12*h   ); ! 4-th order centered finite differences
        ybpp = (-y(5)+16*y(4)-30*y(3)+16*y(2)-y(1) )/(12*h**2); ! 4-th order centered finite differences
       elseif ( xout<=x(2) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(1)
        xb = x(2)
        
@@ -262,7 +262,7 @@ c========================================================
        ybpp = ( y(3)-2*y(2)+y(1) )/(  h**2); ! 2-th order centered finite differences
 
       elseif (xout>=x(4) .and. xout<=x(5) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(4)
        xb = x(5)
        
@@ -275,7 +275,7 @@ c========================================================
        ybp  = ( y(6)       -y(4) )/(2*h   ); ! 2-th order centered finite differences
        ybpp = ( y(6)-2*y(5)+y(4) )/(  h**2); ! 4-th order centered finite differences
       elseif (xout>=x(5)  ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(5)
        xb = x(6)
        
@@ -294,7 +294,7 @@ c========================================================
        write(*,*) 'Warning!!! Interpolation out of limits!!! ',
      $             xout,' out of ' ,x(:)
       endif
-      ! polynomials based on dofs on valus and
+      ! polynomials based on dofs on values and
       ! derivatives around the center points
 
       dx1 = (xout-xa)/h;

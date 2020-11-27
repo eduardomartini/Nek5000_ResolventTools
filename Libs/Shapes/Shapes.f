@@ -14,9 +14,9 @@ c      character shapeType(shapesNParams,3)
       
 c========================================================
 c     Shape module 
-c           (use of fortran modules still to be implemented)
+c           (use of FORTRAN modules still to be implemented)
 c     Reads a shape file and define domain shapes.
-c     For gaussian sensors shapes.txt lines read
+c     For Gaussian sensors shapes.txt lines read
 c     GGG xc yc zc sigx sigy sigz sx sy sz
 c     with corresponding shape on the X,Y,Z direction being
 c           shape_x(x,y,z)=A sx exp( -(x-xc)^2/(2*sigx)-(y-yc)^2/(2*sigy)-(z-zc)^2/(2*sigz)).
@@ -33,7 +33,7 @@ c
 c     Reads sensor parameters from file
 c     shapeFile : file containing sensor information on
 c       the form of a matrix of nxnMaxParams.
-c     fileNameLength : lenght of shapeFile
+c     fileNameLength : length of shapeFile
 c     list : array of n,7 for returning data
 c     maxListSize : size of n (lines of list)
 c     nLines : number of lines read from file
@@ -142,7 +142,7 @@ C       include 'Shapes_DEF'
       sensShape = 1.0
       PI=4.D0*DATAN(1.D0)
       
-      !Fourier - Cheb - Fourrier, with dirletrich - dirletrich - periodic
+      !Fourier - Cheb - Fourier, with Dirichlet - Dirichlet - periodic
       if (currShapeType(1:1) == 'F' .and. 
      $    currShapeType(2:2) == 'C' .and.
      $    currShapeType(3:3) == 'F'      ) then
@@ -162,8 +162,6 @@ C       include 'Shapes_DEF'
             sensShape=0          
           end if
           L = shapeParams(ishape,4)
-c          x_tmp = (yy-L)/(yy+L)
-c          sensShape =sensShape*cos(shapeParams(ishape,5)*acos(x_tmp))
           if (yy<L) then
             if (shapeParams(ishape,5) > 0) then
              sensShape = sensShape*sin(pi*shapeParams(ishape,5)*yy/L)
@@ -185,7 +183,6 @@ c          sensShape =sensShape*cos(shapeParams(ishape,5)*acos(x_tmp))
           return
       end if
       
-		
       xyz(1) = xx
       xyz(2) = yy
       xyz(3) = zz
@@ -290,7 +287,7 @@ c========================================================
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-C       include 'Shapes_DEF'
+
       logical , save :: firstCall = .true.
       character(len=100) fileName
       integer i,j,jp1,jp2
@@ -314,7 +311,7 @@ C       include 'Shapes_DEF'
           else
             open(unit=88, file=fileName,
      $       status='old',action='write',position="append")
-          endif !firs tcall
+          endif !first tcall
 c          write(*,*) time , nShapes , projections(1:nShapes,i)
           write(88,*) time , projections(1:nShapes,i)
           close(88)

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cmd="ln -s "
+
+$cmd ../Libs/FLD2Force/FLD2Force.f .
+$cmd ../Libs/FLD2Force/FLD2Force_DEF .
+$cmd ../Libs/Load_FLD/Load_FLD_To.f .
+$cmd ../Libs/Control/Control.f .
+$cmd ../Libs/Shapes/Shapes.f .
+$cmd ../Libs/SavePerturbations/SavePerturbations.f .
+$cmd ../Libs/ScalarTimeSeries/ScalarTimeSeries.f .

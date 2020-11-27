@@ -4,7 +4,7 @@ c========================================================
 c     FLD2Force Module 
 c
 c     Loads files from disk and uses them as external force.
-c     For now assumes iteratio betweem direct and adjoints solver,
+c     For now assumes iteration between direct and adjoint solver,
 c     and thus there is a time inversion between them.
 c     Forces for times in between two files are obtained by a linear interpolation
 c           (higher interpolation order needs to be implemented at some point)
@@ -151,13 +151,9 @@ c========================================================
      $    fldU(1,1,1,1,1,maxorder),fldU(1,1,1,1,2,maxorder),
      $    fldU(1,1,1,1,3,maxorder),fldP (1,1,1,1,maxorder),
      $    fldT(1,1,1,1,1,maxorder) )
-C          if (NIO==0) then
-C             write(*,*) 'DEBUG: Loaded force time ', time , 
-C      $          ' at simulation time ' , tmpTime ,
-C      $    fldTimes(maxOrder/2),firstCall
-C          endif
+
          if (NIO==0) write(*,*) 'Done'
-         fldTimes(maxorder) = -time ! Time reversal, using first timestamp as reference
+         fldTimes(maxorder) = -time ! Time reversal, using first time-stamp as reference
      
        ! Save first timestamp as reference time
          if (firstCall) then 
@@ -170,10 +166,6 @@ C          endif
 
        enddo ! while
       endif
-      
-C       if (NIO==0)  ! debug message
-C      $    write(*,*) 'DEBUG: Loaaded force time 2 ',time, fldTimes(:)
-C      $ ,fldTimes(1)<-0.5e-99
      
       forceActive = fldTimes(maxorder)+dt/2>time
       return
@@ -199,7 +191,6 @@ c========================================================
       real,save :: prevTime = -1e99
       real :: xx(maxorder),yy(maxorder,3), xx0
       real,intent(out) ::  fffx,fffy,fffz
-C       forceActive = fldTimes(maxorder)+dt/2>time
 
        if (prevTime /= time .and. NIO==0 )then  
           write(*,*) 'FLD2Force_GetF Computing Forces :', forceActive
@@ -216,15 +207,13 @@ C       forceActive = fldTimes(maxorder)+dt/2>time
       endif
 
       e = gllel(eg)
-      ! interpolate to get current forcings
-      ! swich conditions for different interpolation schemes.
+      ! interpolate to get current forcing
+      ! switch conditions for different interpolation schemes.
        xx0 = time
        xx = fldTimes(1:maxorder)
        yy(:,1) = fldU(ix,iy,iz,e,1,1:maxorder)
        yy(:,2) = fldU(ix,iy,iz,e,2,1:maxorder)
        yy(:,3) = fldU(ix,iy,iz,e,3,1:maxorder)
-C       write(*,*) 'A' , time , xx
-C       write(*,*) 'B',yy(:,1) 
 
       if (maxorder==2) then  ! linear interpolation
         call LinInterp(xx,yy(:,1),xx0,fffx)
@@ -339,7 +328,7 @@ c========================================================
       ! https://en.wikipedia.org/wiki/Finite_difference_coefficient#Central_finite_difference
       ! Wikipedia, I known....
       if (xout>=x(3) .and. xout<=x(4) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(3)
        xb = x(4)
        
@@ -353,7 +342,7 @@ c========================================================
        ybpp = (-y(6)+16*y(5)-30*y(4)+16*y(3)-y(2) )/(12*h**2); ! 4-th order centered finite differences
       
       elseif (xout>=x(2) .and. xout<=x(3) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(2)
        xb = x(3)
        
@@ -366,7 +355,7 @@ c========================================================
        ybp  = (-y(5) +8*y(4)         -8*y(2)+y(1) )/(12*h   ); ! 4-th order centered finite differences
        ybpp = (-y(5)+16*y(4)-30*y(3)+16*y(2)-y(1) )/(12*h**2); ! 4-th order centered finite differences
       elseif ( xout<=x(2) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(1)
        xb = x(2)
        
@@ -380,7 +369,7 @@ c========================================================
        ybpp = ( y(3)-2*y(2)+y(1) )/(  h**2); ! 2-th order centered finite differences
 
       elseif (xout>=x(4) .and. xout<=x(5) ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(4)
        xb = x(5)
        
@@ -393,7 +382,7 @@ c========================================================
        ybp  = ( y(6)       -y(4) )/(2*h   ); ! 2-th order centered finite differences
        ybpp = ( y(6)-2*y(5)+y(4) )/(  h**2); ! 4-th order centered finite differences
       elseif (xout>=x(5)  ) then
-       !interpolate between x2 and x3 using numerical derivaties on each limit
+       !interpolate between x2 and x3 using numerical derivatives on each limit
        xa = x(5)
        xb = x(6)
        
@@ -412,7 +401,7 @@ c========================================================
        write(*,*) 'Warning!!! Interpolation out of limits!!! ',
      $             xout,' out of ' ,x(:)
       endif
-      ! polynomials based on dofs on valus and
+      ! polynomials based on dofs on values and
       ! derivatives around the center points
 
       dx1 = (xout-xa)/h;
