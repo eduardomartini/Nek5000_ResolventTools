@@ -18,7 +18,7 @@ c========================================================
       integer, parameter :: maxActuators      = 10    ! defines max number of actuators
       integer, parameter :: maxControlLawLines= 10000 ! defines max number of points in the control law
       integer, parameter :: SensorHistoryLen  = 10000 ! defines max sensor history size
-      integer, parameter :: fileNameLength  = 40      ! max filenime sizes
+      integer, parameter :: fileNameLength  = 40      ! max filename sizes
 
       
 
@@ -29,7 +29,7 @@ c========================================================
       real,save:: ControlLaw(maxControlLawLines,maxInputSensors,
      $                maxActuators)
      
-      real,save:: control_dt , actuatorForce(maxActuators) ! delta t used in the Kernel / computed acuations
+      real,save:: control_dt , actuatorForce(maxActuators) ! delta t used in the Kernel / computed actuations
 
       integer,save:: nControlLawLines, nSensors,nActs  ! number of lines used in the kernel/ number of sensors and actuators used
       
@@ -209,12 +209,12 @@ c========================================================
 c========================================================
 c      Control_LinInterp
 c
-c     Linear interpolation function. Literally found it online.
+c     Linear interpolation function. Literally found it on-line.
 c========================================================
       subroutine Control_LinInterp ( nd, xd, yd, ni, xi ,yi)
 
       !*****************************************************************************80
-      !! Control_LinInterp evaluates the piecewise linear interpolant.
+      !! Control_LinInterp evaluates the piecewise linear interpolation.
       !  Discussion:
       !    The piecewise linear interpolant L(ND,XD,YD)(X) is the piecewise
       !    linear function which interpolates the data (XD(I),YD(I)) for I = 1

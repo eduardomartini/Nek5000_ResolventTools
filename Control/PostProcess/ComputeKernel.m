@@ -3,6 +3,9 @@
 % frequency being the last index.
 clear all
 
+isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
+if isOctave; pkg load signal; end
+
 %% Control Law Parameters
 % shape indexes for sensors, actuators and targets. Leave targets empy for
 % full rank
