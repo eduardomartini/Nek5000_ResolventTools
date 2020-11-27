@@ -1,0 +1,31 @@
+#!/bin/bash
+
+nproc=$1
+action=$2
+
+case $action in
+getBaseflow)
+
+    echo "Obtaining baseflow..."
+    makenek Nek_NL_int
+    nekmpi bfsNL $1
+    ;;
+getData)
+    makenek Nek_Estcon
+    echo "Obtaining data for construction of the Kernels (linearized runs)..."
+    ./run bfs $nproc adj-dir-adj full 1
+    ./run bfs $nproc adj-dir-adj full 2
+    ./run bfs $nproc adj-dir-adj full 3
+    ./run bfs $nproc adj-dir full 4
+    ./run bfs $nproc adj-dir full 5
+    ./run bfs $nproc adj-dir full 6
+    ./run bfs $nproc dir-adj full 29
+    ./run bfs $nproc dir-adj full 30
+    ./run bfs $nproc dir-adj full 31
+    ;;
+*)
+    echo 
+    echo "Invalid inputs. Please run as ./runExample [nproc] [action]"
+    echo -e "\tAvailable actions: getBaseflow and getData"
+    echo 
+esac

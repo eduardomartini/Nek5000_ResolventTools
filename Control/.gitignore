@@ -1,0 +1,8 @@
+Run*
+*.eps
+*fig
+*mat
+ControlKernel*
+*.f
+nek5000
+obj

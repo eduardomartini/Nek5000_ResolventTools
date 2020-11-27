@@ -1,0 +1,25 @@
+bfs.rea
+#==============================================================
+#
+#
+#==============================================================
+2    spatial dimension
+1    number of fields
+#
+Box Inflow
+-5  -5                   nelx,nely,nelz for Box)
+-10 0    -1 
+0 1      -1 
+v  ,E  ,W  ,W  ,P  ,P      
+Box Outflow(Upper)
+-15  -5                   nelx,nely,nelz for Box)
+0 35    -1 
+0 1      1 
+E  ,O  ,E  ,W  ,P  ,P      bc's for nl run
+#E  ,W  ,E  ,W  ,P  ,P      bc's for lin run
+Box Outflow(Lower)
+-15 -5                   nelx,nely,nelz for Box)
+00 35    -1 
+-1 0      -1 
+W  ,O  ,W  ,E  ,P  ,P      bc's for nl run
+#W  ,W  ,W  ,E  ,P  ,P      bc's for lin run
