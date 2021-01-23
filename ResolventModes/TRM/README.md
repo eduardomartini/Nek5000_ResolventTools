@@ -20,7 +20,7 @@ Setup the *params.input* file, which has 6 lines, namely
 Finally, input the list of desired frequencies in *freqList.input*. Note that the maximum number of frequencies that can be used is set by the parameter **nmaxFreq** in *FFT.f*. Increase it if needed.
 
 To run iterations
-> ` ./runArnoldi [reafile] [nproc] [firstIter] [lastIter] [keepfiles:y/n(optional)]`
+> ` ./run [reafile] [nproc] [firstIter] [lastIter] [keepfiles:y/n(optional)]`
 
 * **[reafile]** : name of the file to be run
 * **[nproc]** : number of processes
