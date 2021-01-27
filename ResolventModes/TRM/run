@@ -27,20 +27,22 @@ else
 fi
 
 
-for i in $(seq -f "%02.0f" $iStart $iEnd ); do
+for i in $(seq $iStart $iEnd ); do
 	# Set up run
 
 	params=$(tail -n +2 params.input)
 	echo "$i " > params.input
 	echo "$params" >> params.input
 	
+        CurrIteration="Iter$(printf "%02.0f" $((i)) )"
+
 	if [ $i -gt 0 ]; then
-        PrevIteration="Iter$(printf "%02.0f" $((i-1)) )"
-        echo "Setting up previous run as external force..." $PrevIteration
-        ls $PrevIteration/FIR/fir${reaFile}0.f????? | tac > ForceFLDLists.txt
-    else
-        echo > ForceFLDLists.txt 
-    fi
+          PrevIteration="Iter$(printf "%02.0f" $((i-1)) )"
+          echo "Setting up previous run as external force..." $PrevIteration
+          ls $PrevIteration/FIR/fir${reaFile}0.f????? | tac > ForceFLDLists.txt
+        else
+          echo > ForceFLDLists.txt 
+        fi
       
 	echo 'Running Iter ' $i
 	# Running Iteration
@@ -52,7 +54,8 @@ for i in $(seq -f "%02.0f" $iStart $iEnd ); do
     # script that identifies unnecessary files and removes them
     echo > filesToRename.txt
 	ls i01${reaFile}0.f????? > FileList.txt
-    octave-cli --eval "pkg load signal ; fileList='FileList.txt';normFile='runNormSaved.txt'; Nek_ClearFiles; exit;" 
+#    octave-cli --eval "pkg load signal ; fileList='FileList.txt';normFile='runNormSaved.txt'; Nek_ClearFiles; exit;" 
+    matlab -r "fileList='FileList.txt';normFile='runNormSaved.txt'; Nek_ClearFiles; exit;" 
 	
     #remove these files
     while read p; do
@@ -62,16 +65,17 @@ for i in $(seq -f "%02.0f" $iStart $iEnd ); do
 
 	#Move Files 
 	echo "Moving Files..." 
-	mkdir Iter$i
-	mv {i,c,s}*${reaFile}0.f* Pert*List.txt runCompleted ForceFLDLists.txt log* pertNorm.txt  freqNorm.txt   Iter$i
-	
+	mkdir $CurrIteration
+	mv {i,c,s}*${reaFile}0.f* Pert*List.txt runCompleted ForceFLDLists.txt log* pertNorm.txt  freqNorm.txt  $CurrIteration
+
 	#clear prevRun Files
 	if [ "$clearFiles" = "y" ] && [ $i -gt 0 ]; then
         rm  $PrevIteration/fir${reaFile}0.f* $PrevIteration/fir${reaFile}0.f*
     fi 
 	
 	#Get Filter 
-    octave-cli -W --eval "ampListFile='Iter$i/freqNorm.txt';pkg load signal;Nek_GetFilter;exit"
+#    octave-cli -W --eval "ampListFile='$CurrIterationn/freqNorm.txt';pkg load signal;Nek_GetFilter;exit"
+    matlab -r  "ampListFile='$CurrIteration/freqNorm.txt'; Nek_GetFilter;exit"
 	#Apply Filter 
 	echo "Applying Filter with Nek..." 
 	
@@ -80,13 +84,15 @@ for i in $(seq -f "%02.0f" $iStart $iEnd ); do
 	echo "-1 " > params.input
 	echo "$params" >> params.input
 
-	ls Iter$i/i01${reaFile}0.f????? > FIR_FileList.txt
+	ls $CurrIteration/i01${reaFile}0.f????? > FIR_FileList.txt
 	nekmpi $reaFile $nproc > logFIR
     
 	#remove runs with small amplitude
 	ls fir${reaFile}0.f????? > FIR_FilteredFileList.txt
 
-    octave-cli --eval "pkg load signal ; fileList='FIR_FilteredFileList.txt';normFile='runNormFiltered.txt'; Nek_ClearFiles; exit;" 
+#    octave-cli --eval "pkg load signal ; fileList='FIR_FilteredFileList.txt';normFile='runNormFiltered.txt'; Nek_ClearFiles; exit;" 
+     matlab -r " fileList='FIR_FilteredFileList.txt';normFile='runNormFiltered.txt'; Nek_ClearFiles; exit;" 
+    
     
     while read p; do
         echo "$p"
@@ -94,20 +100,17 @@ for i in $(seq -f "%02.0f" $iStart $iEnd ); do
     done <filesToRename.txt
 	
 	rm {c,s}01${reaFile}0.f?????
-	rename -e "s/00${reaFile}/01${reaFile}/"  {c,s}??${reaFile}*
-#	rename -e "00${reaFile}" "01${reaFile}"  {c,s}??${reaFile}*
-	mkdir Iter$i/FIR
-	mv {f,c,s}*${reaFile}0.f* log* FIR_FileList.txt FIR_Coefs.txt  plot_filter* freqNorm.txt  plot_norm* runCompleted runNormFiltered.txt Iter$i/FIR
+	mkdir $CurrIteration/FIR
+	mv {f,c,s}*${reaFile}0.f* log* FIR_FileList.txt FIR_Coefs.txt  plot_filter* freqNorm.txt  plot_norm* runCompleted runNormFiltered.txt $CurrIteration/FIR
 
 	#clear unfiltered Files
 	if [ "$clearFiles" = "y" ]; then
-        rm  Iter$i/i01${reaFile}0.f*
+        rm  $CurrIteration/i01${reaFile}0.f*
     fi 
-		
-	#Setting up next run
-	PrevIteration="Iter${i}"
 done
 
-octave-cli --eval "pkg load signal ; reaFile='$reaFile';computeGains; exit;" 
+#octave-cli --eval "pkg load signal ; reaFile='$reaFile';computeGains; exit;" 
+matlab -r "reaFile='$reaFile';computeGains; exit;" 
     	
+
 

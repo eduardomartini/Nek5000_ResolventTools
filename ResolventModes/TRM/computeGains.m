@@ -33,11 +33,11 @@ for iif = 1:length(ifList)
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
         qhat{i+1,iif} = qhat{i+1,iif} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i; 
 
-        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'c01',reaFile,ifList(iif));
+        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'c00',reaFile,ifList(iif));
         disp(file);
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
         qfhat{i+1,iif} = data(:,:,(1:ndim)+ndim*(fields(1) == 'X')); 
-        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'s01',reaFile,ifList(iif));
+        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'s00',reaFile,ifList(iif));
         disp(file)
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
         qfhat{i+1,iif} = qfhat{i+1,iif} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i; 
