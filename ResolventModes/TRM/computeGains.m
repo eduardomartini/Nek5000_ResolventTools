@@ -22,31 +22,29 @@ NormList  = nan(nIters,length(ifList));
 NormListf = nan(nIters,length(ifList));
 
 for iif = 1:length(ifList)
+    qhat={};
+    qfhat={};
+
     for i=0:nIters-1
         file = sprintf('Iter%02.0f/%s%s0.f%05.0f',i,'c01',reaFile,ifList(iif));
         disp(file);
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
-        qhat{i+1,iif} = data(:,:,(1:ndim)+ndim*(fields(1) == 'X')); 
+        qhat{i+1} = data(:,:,(1:ndim)+ndim*(fields(1) == 'X')); 
         
         file = sprintf('Iter%02.0f/%s%s0.f%05.0f',i,'s01',reaFile,ifList(iif));
         disp(file)
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
-        qhat{i+1,iif} = qhat{i+1,iif} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i; 
+        qhat{i+1} = qhat{i+1} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i; 
 
-        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'c01',reaFile,ifList(iif));
+        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'c00',reaFile,ifList(iif));
         disp(file);
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
-        qfhat{i+1,iif} = data(:,:,(1:ndim)+ndim*(fields(1) == 'X')); 
-        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'s01',reaFile,ifList(iif));
+        qfhat{i+1} = data(:,:,(1:ndim)+ndim*(fields(1) == 'X')); 
+
+        file = sprintf('Iter%02.0f/FIR/%s%s0.f%05.0f',i,'s00',reaFile,ifList(iif));
         disp(file)
         [data,lr1,elmap,freq(iif),istep,fields,emode,wdsz,etag,header,status] = readnek(file );
-        qfhat{i+1,iif} = qfhat{i+1,iif} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i; 
-        
-        % Fix phase (adjoint run running back in time)
-%         if mod(i,2)==1
-%             qhat{i+1,iif} = - conj(qhat{i+1,iif});
-%             qfhat{i+1,iif}= - conj(qfhat{i+1,iif});
-%         end
+        qfhat{i+1} = qfhat{i+1} + data(:,:,(1:ndim)+ndim*(fields(1) == 'X'))*1i;         
     end
 
 
@@ -56,8 +54,8 @@ for iif = 1:length(ifList)
     costheta = @(x,y)  IP(x,y)/(N(x)*N(y));
 
     for i=1:nIters
-        NormList (i,iif) = N(qhat {i,iif});
-        NormListf(i,iif) = N(qfhat{i,iif});
+        NormList (i,iif) = N(qhat {i});
+        NormListf(i,iif) = N(qfhat{i});
     end
     gains_powIter_da(2:end,iif) = NormList(2:end,iif)./NormListf(1:end-1,iif);
     gains_powIter(3:end,iif) = sqrt(gains_powIter_da(2:end-1,iif).*gains_powIter_da(3:end,iif));
@@ -68,13 +66,12 @@ for iif = 1:length(ifList)
 
     clear XX YY X Y        
     for i = 1:nIters-2
-       scale(i) = IP(qhat{i+1,iif},qfhat{i+1,iif})/N(qhat{i+1,iif})^2;
-       X(:,i)   = qfhat{i  ,iif}(:);
-       Y(:,i)   = qhat{i+2,iif}(:)/scale(i);
+       scale(i) = IP(qhat{i+1},qfhat{i+1})/N(qhat{i+1})^2;
+       X(:,i)   = qfhat{i  }(:);
+       Y(:,i)   = qhat{i+2}(:)/scale(i);
     end
     
     for i=2:2:nIters-2
-%         [Xn,R] = gson(X(:,(1:2:i)).*mm);
         [Xn,R] = qr(X(:,(1:2:i)).*mm,0);
         Yn = (Y(:,1:2:i).*mm)*inv(R);
         H = Xn'*Yn ;
@@ -83,14 +80,15 @@ for iif = 1:length(ifList)
         [gains_tmp,order]= sort(sqrt(diag(gains_tmp)),'descend'); 
         gains_krylov(1:min(5,n),i+2,iif) = gains_tmp(1:min(5,n));
     end
-end
-
+end     
 dlmwrite('gains_powerIter.dat',[freq;gains_powIter].');
 for i=1:size(gains_krylov,1)
     dlmwrite(sprintf('gains_krylov_%03.0f.dat',i),[freq;squeeze(gains_krylov(1,:,:))].');
 end
 dlmwrite('run_freqNorms.dat',[freq;NormList].');
 dlmwrite('run_freqNorms_filtered.dat',[freq;NormListf].');
+
+
 
 
 
