@@ -1,9 +1,5 @@
 isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
 
-%IRA parameters. IRA is NOT fully implemented, keep k+p large.
-k=2;
-p=1500;
-
 %reads parameters
 parameters = dlmread('params.input');
 nfreqs = parameters(4);
@@ -48,69 +44,67 @@ else
     if nOutputModes<0
         nOutputModes=nCurrIter;
     end
+    nOutputModes=min(nOutputModes,nCurrIter);
 end
 
 
 sig= nan(nfreqs,nCurrIter);
 for iif =  iFreqsList
     %%Load all Relevant Files
-    [freq,X,Y,xx,yy] = Nek_ReadIRA_Iters(reaFile,1:nCurrIter,iif,numel(XY));
+    readAllFiles = nOutputModes > 0; %only read all files if gains and modes are requested
+    [freq,InputsOuputs] = Nek_ReadIters(reaFile,1:nCurrIter,iif,numel(XY),readAllFiles);
+    if readAllFiles
+        X  = InputsOuputs{ 1 };
+        xx = InputsOuputs{ 2 };
+        yy = InputsOuputs{ 3 };
+        Y  = InputsOuputs{ 4 };
+    else
+        X  = InputsOuputs{1  };
+        Y  = InputsOuputs{ 2 };
+    end
+    clear InputsOuputs
+    
     % Scales input to norm 1, and correct for normalization in the adjoint run
-    scale = 0;
-    for i=1:nCurrIter
-        %normalize input
-        scale = sqrt((X(:,i)'*(M.*X(:,i))) );
-        X(:,i)=X(:,i)/scale;
-        Y(:,i)=Y(:,i)/scale;
-        
-        %correct normalization
-        scale = sqrt(  (xx(:,i)'*(M.*xx(:,i)))   /    ( yy(:,i)'*(M.*yy(:,i)) )  );
-        Y(:,i)=Y(:,i)*scale;
+    % Not needed if gains are not requested
+    if readAllFiles
+        scale = 0;
+        for i=1:nCurrIter
+            %normalize input
+            scale = sqrt((X(:,i)'*(M.*X(:,i))) );
+            X(:,i)=X(:,i)/scale;
+            Y(:,i)=Y(:,i)/scale;
+
+            %correct normalization
+            scale = sqrt(  (xx(:,i)'*(M.*xx(:,i)))   /    ( yy(:,i)'*(M.*yy(:,i)) )  );
+            Y(:,i)=Y(:,i)*scale;
+        end
     end
     
     %% Pre multiply by the square of the norm.
     Xm = X.*m;
     Ym = Y.*m;
-    
-    Vk = Xm;
-    Hk = Vk'*Ym;
-    % % Computes Arnoldi residual. Not used so far
+    % Computes Arnoldi residual (readallfiles=True). 
+    % Gets the component of last output which is ortogonal to the inputs (readallfiles=false). 
     fk = Ym(:,end);
-    fk = fk - Vk*(pinv(Vk)*fk);
+    fk = fk - Xm*(pinv(Xm)*fk);
     fk=fk/sqrt(fk'*fk);
-    
-    % Prepares for next run
-    if nCurrIter < k+p % direct Arnoldi Iteration, just saves the next ouput
-        fields_U=fields;
-        fields_U(1:3)='U  ';
-        fexp = (fk./ m) ;
-        filelocOut = sprintf('ForceFiles/extHarmForceCos0.f%05.0f',iif);         
-        writenek(filelocOut,reshape(real(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields_U,emode,wdsz,etag);
-        filelocOut = sprintf('ForceFiles/extHarmForceSin0.f%05.0f',iif);         
-        writenek(filelocOut,reshape(imag(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields_U,emode,wdsz,etag);
-    else % IRA iteration, performs QR decomposition and saves the current subspace.
-         %  NOT IMPLEMENTED 
-        mu = 0;
-        for j=1:p
-            mu = 0;%abs(max(eig(H))); 
-            [Q,R] = qr(Hk-mu*eye(size(Hk)));
-            Vkp   = Vk*Q;
-            Hkp   = R*Q+mu*eye(size(Hk));
 
-            betakp = Hkp(end,end-1); 
-            sigmak = Q(end,end-1); 
+    %Prepares inputs for next run
+    fields(1:3)='U  ';
+    fexp = (fk./ m) ;
+    filelocOut = sprintf('ForceFiles/extHarmForceCos0.f%05.0f',iif);         
+    writenek(filelocOut,reshape(real(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
+                        lr1,elmap,freq,istep,fields,emode,wdsz,etag);
+    filelocOut = sprintf('ForceFiles/extHarmForceSin0.f%05.0f',iif);         
+    writenek(filelocOut,reshape(imag(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
+                        lr1,elmap,freq,istep,fields,emode,wdsz,etag);
 
-            fk = betakp*Vkp(:,end)+sigmak*fk;    
-            Vk = Vkp(:,1:end-1);
-            Hk = Hkp(1:end-1,1:end-1);
-        end
-    end
+    if readAllFiles
+        %Computes Arnoldi factorization matrix H
+        Vk = Xm;
+        Hk = Vk'*Ym;
     
-    
-    % Compute Gains for all Iteratins, and modes for the last iteration
-    if nOutputModes>0
+        % Compute Gains for all Iteratins, and modes for the last iteration
         sig= nan(nCurrIter,nCurrIter);
         for j=1:(nCurrIter)
             [psi,S] = eig(Hk(1:j,1:j)); 
@@ -130,6 +124,7 @@ for iif =  iFreqsList
         end
 
         for i=1:nOutputModes
+                fields(1:3) = 'XU ';
                 data = XY*0;            
                 data(:) = real(ForcModes(:,i));
                 filelocOut = sprintf('Resolvent/resforce_%02.0f_real0.f%05.0f',i,iif);         
