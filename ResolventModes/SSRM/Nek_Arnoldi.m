@@ -129,6 +129,8 @@ for iif =  iFreqsList
         end
 
         for i=1:nOutputModes
+                fields(1:3)='XU ';
+
                 data = XY*0;            
                 data(:) = real(ForcModes(:,i));
                 filelocOut = sprintf('Resolvent/resforce_%02.0f_real0.f%05.0f',i,iif);         
