@@ -44,6 +44,32 @@ C           csin(1:nHarm) = sin(arg(1:nHarm))*factor(1:nHarm)*FourSignCon
 
       endfunction
 
+
+
+
+      subroutine MultiHarm_Multi(Mx,My,Mz)
+      include 'MultiHarm_DEF'
+      include 'TOTAL'
+
+      real Mx(lx1,ly1,lz1,lelt)
+      real My(lx1,ly1,lz1,lelt)
+      real Mz(lx1,ly1,lz1,lelt)
+      integer i
+
+      do i=1,nHarm
+        cosShapes(:,:,:,:,1,i)=cosShapes(:,:,:,:,1,i)*Mx
+        cosShapes(:,:,:,:,2,i)=cosShapes(:,:,:,:,2,i)*Mx
+        sinShapes(:,:,:,:,1,i)=sinShapes(:,:,:,:,1,i)*My
+        sinShapes(:,:,:,:,2,i)=sinShapes(:,:,:,:,2,i)*My
+        if (ndim==3) then
+          cosShapes(:,:,:,:,3,i)=cosShapes(:,:,:,:,3,i)*Mz
+          sinShapes(:,:,:,:,3,i)=sinShapes(:,:,:,:,3,i)*Mz
+        endif
+      enddo
+
+
+      end subroutine
+
       subroutine  MultiHarm_LoadShapes(harmParamsFile,normalize_in)
         include 'MultiHarm_DEF'
         include 'TOTAL'
@@ -53,7 +79,7 @@ C           csin(1:nHarm) = sin(arg(1:nHarm))*factor(1:nHarm)*FourSignCon
         character(len=100):: harmParamsFile
         character(len=100):: currFilename
         logical, intent(in),optional :: normalize_in
-        logical normalize
+        logical normalize,file_exists
         integer i
         real,external :: glsum
 
@@ -61,6 +87,14 @@ C           csin(1:nHarm) = sin(arg(1:nHarm))*factor(1:nHarm)*FourSignCon
           normalize=normalize_in
         else 
           normalize = .false.
+        endif
+
+        ! Reads list of files to be used as forcing terms
+        INQUIRE(FILE=harmParamsFile, EXIST=file_exists)
+        if (.not. file_exists) then
+          if (NIO==0) write(*,*) 'File ', trim(harmParamsFile)  , 
+     $             ' not found. Aborting...'
+          call exitt 
         endif
 
         open (unit=fileUnit, file=harmParamsFile,
@@ -73,21 +107,31 @@ C           csin(1:nHarm) = sin(arg(1:nHarm))*factor(1:nHarm)*FourSignCon
         do i=1,nHarm
           read(fileUnit,'(A)')  currFilename
           if(NIO==0) then
-            write(*,*) 'MultiHarm: Real Part file ' , currFilename
+            write(*,*) 'MultiHarm: Real Part file ' , trim(currFilename)
           endif 
-          if (ndim==2) then
-            call Load_FLD_Time_To_wTime(currFilename,
-     $        cosShapes(:,:,:,:,1,i),
-     $        cosShapes(:,:,:,:,2,i),
-     $        dummy,dummy,dummy)
+
+          ! Reads forcing files
+          INQUIRE(FILE=currFilename, EXIST=file_exists)
+          if (file_exists) then
+ 
+            if (ndim==2) then
+              call Load_FLD_Time_To_wTime(currFilename,
+     $          cosShapes(:,:,:,:,1,i),
+     $          cosShapes(:,:,:,:,2,i),
+     $          dummy,dummy,dummy)
+            else
+              call Load_FLD_Time_To_wTime(currFilename,
+     $          cosShapes(:,:,:,:,1,i),
+     $          cosShapes(:,:,:,:,2,i),
+     $          cosShapes(:,:,:,:,3,i),
+     $          dummy,dummy)     
+            end if
+            freqs(i) = time
           else
-            call Load_FLD_Time_To_wTime(currFilename,
-     $        cosShapes(:,:,:,:,1,i),
-     $        cosShapes(:,:,:,:,2,i),
-     $        cosShapes(:,:,:,:,3,i),
-     $        dummy,dummy)     
-          end if
-          freqs(i) = time
+            if (NIO==0) write(*,*) 'File ', currFilename  , 
+     $             'not found. Aborting...'
+            call exitt 
+          endif        
         enddo
 
         ! Reads imag (sin) parts
@@ -140,25 +184,7 @@ C           csin(1:nHarm) = sin(arg(1:nHarm))*factor(1:nHarm)*FourSignCon
         freqs(1:nfreqs) = frequencies(1:nfreqs)
 
         if (NIO==0) write(*,*) 'Random initialization of Harm comp '
-C #IF .false.
-C         ! Uses fortran pseudo random 
-C         write(*,*) 'Building pseudo-Random start condition'
-C         do i=1,nx1*ny1*nz1*nelt
-C           xx=xm1(i,1,1,1)
-C           yy=ym1(i,1,1,1)
-C           zz=zm1(i,1,1,1)
-C         do j=1,ndim
-C           do k=1,nfreqs
-C             cosShapes(:,:,:,:,j,k)=cos( 
-C      $    j*3.e4*(xm1*ym1)**2-1.5e3*xm1*ym1 +85.e3*xm1+zm1+1e3*zm1**2.)
-C             sinShapes(:,:,:,:,j,k)=cos( 
-C      $    j*5.e4*(xm1*ym1)**2-6.5e3*xm1*ym1 +35.e3*xm1+zm1+4e3*zm1**2.)
-C           enddo
-C         enddo
 
-C         enddo
-C #ELSE
-        ! Uses fortran built-in random number generator
         write(*,*) 'Building Random start condition with Fortran rand'
         call RANDOM_NUMBER(cosShapes)
         call RANDOM_NUMBER(sinShapes)
@@ -170,7 +196,7 @@ C #ELSE
              call dsavg(sinShapes(:,:,:,:,j,k))
           enddo
         enddo
-C #ENDIF  
+
         if (NIO==0) write(*,*) 'Done! '
         if (freqs(1)==0) then        
           sinShapes(:,:,:,:,:,1)=0
