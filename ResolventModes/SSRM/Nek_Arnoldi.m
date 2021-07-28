@@ -1,9 +1,5 @@
 isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
 
-%IRA parameters. IRA is NOT fully implemented, keep k+p large.
-k=2;
-p=1500;
-
 %reads parameters
 parameters = dlmread('params.input');
 nfreqs = parameters(4);
@@ -59,56 +55,35 @@ for iif =  iFreqsList
     scale = 0;
     for i=1:nCurrIter
         %normalize input
-        scale = sqrt((X(:,i)'*(M.*X(:,i))) );
+        scale = NORM(X(:,i));
         X(:,i)=X(:,i)/scale;
         Y(:,i)=Y(:,i)/scale;
         
         %correct normalization
-        scale = sqrt(  (xx(:,i)'*(M.*xx(:,i)))   /    ( yy(:,i)'*(M.*yy(:,i)) )  );
+        scale = NORM(xx(:,i))/NORM(yy(:,i));
         Y(:,i)=Y(:,i)*scale;
     end
+        
+    % Computes residual.Component of the response ortogonal to previous
+    % inputs
+    fk = Y(:,end)- X*(pinv(X.*m)*(Y(:,end).*m));
+    fk = fk/NORM(fk);
     
-    %% Pre multiply by the square of the norm.
-    Xm = X.*m;
-    Ym = Y.*m;
+    Hk = IP(X,Y);
     
-    Vk = Xm;
-    Hk = Vk'*Ym;
-    % % Computes Arnoldi residual. Not used so far
-    fk = Ym(:,end);
-    fk = fk - Vk*(pinv(Vk)*fk);
-    fk=fk/sqrt(fk'*fk);
-    
-    % Prepares for next run
-    if nCurrIter < k+p % direct Arnoldi Iteration, just saves the next ouput
-        fields(1:3)='U  ';
-        fexp = (fk./ m) ;
-        filelocOut = sprintf('ForceFiles/extHarmForceCos0.f%05.0f',iif);         
-        writenek(filelocOut,reshape(real(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields,emode,wdsz,etag);
-        filelocOut = sprintf('ForceFiles/extHarmForceSin0.f%05.0f',iif);         
-        writenek(filelocOut,reshape(imag(fexp ),size(XY,1),size(XY,2),size(XY,3)), ...
-                            lr1,elmap,freq,istep,fields,emode,wdsz,etag);
-    else % IRA iteration, performs QR decomposition and saves the current subspace.
-         %  NOT IMPLEMENTED 
-        mu = 0;
-        for j=1:p
-            mu = 0;%abs(max(eig(H))); 
-            [Q,R] = qr(Hk-mu*eye(size(Hk)));
-            Vkp   = Vk*Q;
-            Hkp   = R*Q+mu*eye(size(Hk));
-
-            betakp = Hkp(end,end-1); 
-            sigmak = Q(end,end-1); 
-
-            fk = betakp*Vkp(:,end)+sigmak*fk;    
-            Vk = Vkp(:,1:end-1);
-            Hk = Hkp(1:end-1,1:end-1);
-        end
-    end
+    % Prepares next run
+    fields(1:3)='U  ';
+    filelocOut = sprintf('ForceFiles/extHarmForceCos0.f%05.0f',iif);         
+    disp(['Writting ' filelocOut])
+    writenek(filelocOut,reshape(real(fk ),size(XY,1),size(XY,2),size(XY,3)), ...
+                        lr1,elmap,freq,istep,fields,emode,wdsz,etag);
+    filelocOut = sprintf('ForceFiles/extHarmForceSin0.f%05.0f',iif);         
+    disp(['Writting ' filelocOut])
+    writenek(filelocOut,reshape(imag(fk ),size(XY,1),size(XY,2),size(XY,3)), ...
+                        lr1,elmap,freq,istep,fields,emode,wdsz,etag);
     
     
-    % Compute Gains for all Iteratins, and modes for the last iteration
+    % Compute Gains for all Iterations, and save modes found for the last iteration
     if nOutputModes>0
         sig= nan(nCurrIter,nCurrIter);
         for j=1:(nCurrIter)
@@ -124,8 +99,8 @@ for iif =  iFreqsList
         ForcModes =  X*psi;
 
         for i=1:nCurrIter
-            RespModes (:,i) = RespModes(:,i) / sqrt(RespModes(:,i)'*(M.*RespModes (:,i)));
-            ForcModes (:,i) = ForcModes(:,i) / sqrt(ForcModes(:,i)'*(M.*ForcModes (:,i)));
+            RespModes (:,i) = RespModes(:,i) / NORM(RespModes(:,i));
+            ForcModes (:,i) = ForcModes(:,i) / NORM(ForcModes(:,i));
         end
 
         for i=1:nOutputModes
