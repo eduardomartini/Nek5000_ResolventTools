@@ -50,7 +50,7 @@ end
 sig= nan(nfreqs,nCurrIter);
 for iif =  iFreqsList
     %%Load all Relevant Files
-    [freq,X,Y,xx,yy] = Nek_ReadIRA_Iters(reaFile,1:nCurrIter,iif,numel(XY));
+    [freq,X,Y,xx,yy] = Nek_ReadIters(reaFile,1:nCurrIter,iif,numel(XY));
     % Scales input to norm 1, and correct for normalization in the adjoint run
     scale = 0;
     for i=1:nCurrIter

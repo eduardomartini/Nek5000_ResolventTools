@@ -14,6 +14,7 @@ c     SSRM.
 c
 c     Subroutines
 c           SSRM_Init    : Initialize the module.
+c                   Should be called in userdat. 
 c           SSRM_IC      : Sets initial conditions. 
 c                   Should be called in useric. 
 c                  read (used in exit conditions).
@@ -98,6 +99,64 @@ c-----------------------------------------------------------------------
 
 
 
+
+
+      end subroutine 
+
+c-------------------------- useric call --------------------------------
+      subroutine SSRM_IC(ux,uy,uz) 
+      include 'SIZE'
+      include 'Total'
+      
+      real ux,uy,uz
+
+      real B(lx1,ly1,lz1,lelt,3),C(lx1,ly1,lz1,lelt,3)
+      COMMON /SSRM_BC/ B,C
+
+      if (currIter<0 .and. jp > 0) then
+        call RANDOM_NUMBER(ux)
+        call RANDOM_NUMBER(uy)
+        call RANDOM_NUMBER(uz)
+        ux = ux*2-1
+        uy = uy*2-1
+        uz = uz*2-1
+      else
+        ux  =0.0 
+        uy  =0.0
+        uz  =0.0
+      endif
+      end subroutine
+
+c-------------------------- userchk call  -----------------------------
+      subroutine SSRM_userchk
+      use FFT
+      use SavePerturb
+      use MultiHarm
+      implicit none
+      include 'SIZE'
+      include 'TSTEP'           ! ISTEP
+      include 'INPUT'           ! PARAM
+      include 'SOLN'            ! V[XYZ]
+      include 'GEOM'            ! xm1,ym1
+      include 'ADJOINT'
+      include 'MASS'
+      real,external::glsum
+      integer ntot,ntot2,i,j , ipert
+      real pertNorm
+      character(len=100) refFile 
+      logical file_exists 
+      real tmpFreq(2000)
+
+      integer,save ::  pertIO
+
+      real B(lx1,ly1,lz1,lelt,3),C(lx1,ly1,lz1,lelt,3)
+      COMMON /SSRM_BC/ B,C
+
+
+      ntot = nx1*ny1*nz1*nelv
+      ntot2= nx2*ny2*nz2*nelv
+                      
+      if (istep==0) then
 
 
       ntot = nx1*ny1*nz1*nelv
@@ -197,64 +256,7 @@ c-----------------------------------------------------------------------
             call MultiHarm_Multi(B(:,:,:,:,1),B(:,:,:,:,2),B(:,:,:,:,3))
         endif
         
-      endif
-
-      end subroutine 
-
-c-------------------------- useric call --------------------------------
-      subroutine SSRM_IC(ux,uy,uz) 
-      include 'SIZE'
-      real ux,uy,uz
-
-      real B(lx1,ly1,lz1,lelt,3),C(lx1,ly1,lz1,lelt,3)
-      COMMON /SSRM_BC/ B,C
-
-      if (currIter<0 .and. jp > 0) then
-        call RANDOM_NUMBER(ux)
-        call RANDOM_NUMBER(uy)
-        call RANDOM_NUMBER(uz)
-        ux = ux*2-1
-        uy = uy*2-1
-        uz = uz*2-1
-      else
-        ux  =0.0 
-        uy  =0.0
-        uz  =0.0
-      endif
-      end subroutine
-
-c-------------------------- userchk call  -----------------------------
-      subroutine SSRM_userchk
-      use FFT
-      use SavePerturb
-      use MultiHarm
-      implicit none
-      include 'SIZE'
-      include 'TSTEP'           ! ISTEP
-      include 'INPUT'           ! PARAM
-      include 'SOLN'            ! V[XYZ]
-      include 'GEOM'            ! xm1,ym1
-      include 'ADJOINT'
-      include 'MASS'
-      real,external::glsum
-      integer ntot,ntot2,i,j , ipert
-      real pertNorm
-      character(len=100) refFile 
-      logical file_exists 
-      real tmpFreq(2000)
-
-      integer,save ::  pertIO
-
-      real B(lx1,ly1,lz1,lelt,3),C(lx1,ly1,lz1,lelt,3)
-      COMMON /SSRM_BC/ B,C
-
-
-      ntot = nx1*ny1*nz1*nelv
-      ntot2= nx2*ny2*nz2*nelv
-                      
-      if (istep==0) then
-        call SSRM_Init
-        
+      endif        
       endif
 
       ! calculate current norm and save to disk
