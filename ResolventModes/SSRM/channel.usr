@@ -1,0 +1,116 @@
+c-----------------------------------------------------------------------
+C
+C  USER SPECIFIED ROUTINES:
+C
+C     - boundary conditions
+C     - initial conditions
+C     - variable properties
+C     - local acceleration for fluid (a)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.
+
+      include 'SSRM.f'
+
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      use SSRM
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'      
+      include 'NEKUSE'
+      include 'ADJOINT'
+      integer eg,e,ix,iy,iz
+
+      e = gllel(eg)
+      call SSRM_Force(ix,iy,iz,e,time,ffx,ffy,ffz) 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e,f,eg
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      use SSRM
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      call SSRM_userchk
+     
+
+
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+c     NOTE ::: This subroutine MAY NOT be called by every process
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      if (JP>0) then
+            ux=0.0
+            uy=0.0
+            uz=0.0
+            temp=0.0
+      endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      use SSRM
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+
+
+      call SSRM_IC(ux,uy,uz)
+
+ 
+      temp=0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+            
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+      
+      return
+      end
+

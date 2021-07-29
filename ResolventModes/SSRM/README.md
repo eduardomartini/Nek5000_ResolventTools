@@ -18,6 +18,8 @@ Setup the *params.input* file, which has 5 lines, namely
 
 To define the relaxation time set **runType** to -1 (direct run) or -2 (adjoint run) in *params.input*, and run Nek5000. The perturbation field will be randomly initialised, and the perturbation norm stored in *runNorm.txt*. Check the time needed for the norm to reach a desired tolerance and modify *params.input* accordingly.  
 
+To use  **B** and **C** matrices create 'B.fld' and 'C.fld' files. The velocity fields will be used as diagonal entries into B and C. If the files are not present, B and/or are assumed to be the identity matrix.
+
 Finally run iterations to compute resolvent modes as
 >  `./runArnoldi [reafile] [nproc] [firstIter] [lastIter] [nOctSections(optional)]`
 
@@ -43,7 +45,7 @@ Other than for debug purposes, set IOSTEP and IOTIME to zero to minimise disk us
 
 
 Examples for the computation of modes for 2/3D channel flows are. To reproduce validation generate .map files for *channel_[2,3].rea*, modify *SIZE* to setup Nek5000 for a 2/3D run, compile and run *runArnoldi* as
-> `makenek Nek_TRM`   
+> `./compile channel`   
 > `./runArnoldi channel_[2/3]D [number of cores] 0 20`
 
 Alternatively, run the **runExamples** file.
@@ -59,8 +61,7 @@ The main files, other than the inputs previously mentioned, are
 
 # References
 
-1. Martini, Eduardo, Daniel Rodríguez, Aaron Towne, and André V. G. Cavalieri. “Efficient Computation of Global Resolvent Modes,” 2020. [https://arxiv.org/abs/2008.10904](https://arxiv.org/abs/2008.10904) 
-
+1. Martini, Eduardo, Daniel Rodríguez, Aaron Towne, and André V. G. Cavalieri. “Efficient Computation of Global Resolvent Modes,”  Journal of Fluid Mechanics 919 (2021): A3. [https://doi.org/10.1017/jfm.2021.364](https://doi.org/10.1017/jfm.2021.364)
 
 
 

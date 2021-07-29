@@ -240,7 +240,7 @@ c     ------ Writes Output Files --------------------
       timesave = time
       if (NIO==0)  then
           write(*,*) "Outposting FFts, for ", 
-     $                npert, "perturbations"
+     $             npert, "perturbations and ", nFreqs, 'frequencies.'
       end if
         
 c       Output perturbation states
@@ -318,7 +318,65 @@ c       Output perturbation states
       return
       end subroutine      
       
+
+
       
+      subroutine FFt_Multi(jpStart_in, jpEnd_in,Mx,My,Mz)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'FFT_DEF'
+
+      real Mx(lx1,ly1,lz1,lelt)
+      real My(lx1,ly1,lz1,lelt)
+      real Mz(lx1,ly1,lz1,lelt)
+      integer i,j,k,ntot,jpStart,jpEnd
+      integer,intent(in),optional  :: jpStart_in,jpEnd_in
+
+      ntot = nx1*ny1*nz1*nelt
+
+      jpStart = 0 
+      jpEnd = npert
+
+      if(present(jpStart_in)) jpStart=jpStart_in
+      if(present(jpEnd_in  )) jpEnd  =jpEnd_in
+      
+      if (jpStart==0) then
+        do i= 1,ntot
+          ! Base flow (jp==0)
+            ! Cosine transform
+          vx_FFTs_c(i,:)= vx_FFTs_c(i,:)*Mx(i,1,1,1)
+          vy_FFTs_c(i,:)= vy_FFTs_c(i,:)*My(i,1,1,1)
+             ! Sine transform
+          vx_FFTs_s(i,:)= vx_FFTs_s(i,:)*Mx(i,1,1,1)
+          vy_FFTs_s(i,:)= vy_FFTs_s(i,:)*My(i,1,1,1)
+            ! if 3d
+          if ( ndim == 3) then
+              vz_FFTs_c(i,:)= vx_FFTs_c(i,:)*Mz(i,1,1,1)
+              vz_FFTs_s(i,:)= vz_FFTs_s(i,:)*Mz(i,1,1,1)
+          end if
+        end do ! i
+      endif ! jpstart
+
+      ! Perturbations (jp>0)
+      do k= 1,nFreqs
+        do i=1,ntot
+            do j=max(1,jpStart),jpEnd
+                ! Cosine transform
+                vxp_FFTs_c(i,j,k)= vxp_FFTs_c(i,j,k)*Mx(i,1,1,1)
+                vyp_FFTs_c(i,j,k)= vyp_FFTs_c(i,j,k)*Mx(i,1,1,1)
+                 ! Sine transform
+                vxp_FFTs_s(i,j,k)= vxp_FFTs_s(i,j,k)*My(i,1,1,1)
+                vyp_FFTs_s(i,j,k)= vyp_FFTs_s(i,j,k)*My(i,1,1,1)
+                ! if 3d
+                if ( ndim == 3) then
+                    vzp_FFTs_c(i,j,k)= vzp_FFTs_c(i,j,k)*Mz(i,1,1,1)
+                    vzp_FFTs_s(i,j,k)= vzp_FFTs_s(i,j,k)*Mz(i,1,1,1)
+                end if
+            enddo ! k
+        enddo
+      enddo
+      end subroutine
       
       subroutine ApplyFft(fileListtxt,freqsTxt,deltaT)
       implicit none
@@ -378,9 +436,6 @@ c     $      vxp,vyp,vzp,prp,tp)
       
       return
       end subroutine
-      
-
-
 
       subroutine FFTs_FFTConvMinus(sign)
         logical sign

@@ -17,7 +17,8 @@ Specific instructions for each tools are included in their respective folders.
 
 ## References
 
-1. Martini, Eduardo, Daniel Rodríguez, Aaron Towne, and André V. G. Cavalieri. “Efficient Computation of Global Resolvent Modes,” 2020. [https://arxiv.org/abs/2008.10904](https://arxiv.org/abs/2008.10904) 
+1. Martini, Eduardo, Daniel Rodríguez, Aaron Towne, and André V. G. Cavalieri. “Efficient Computation of Global Resolvent Modes,”  Journal of Fluid Mechanics 919 (2021): A3. [https://doi.org/10.1017/jfm.2021.364](https://doi.org/10.1017/jfm.2021.364)
+2. Journal of Fluid Mechanics, 919, A3. Cambridge Core. 
 2. Martini, Eduardo, André V. G. Cavalieri, Peter Jordan, Aaron Towne, and Lutz Lesshafft. “Resolvent-Based Optimal Estimation of Transitional and Turbulent Flows.” Journal of Fluid Mechanics 900 (2020): A2. [https://doi.org/10.1017/jfm.2020.435](https://doi.org/10.1017/jfm.2020.435)
 3. E. Martini, J. Jung ,  A. V. G. Cavalieri, P. Jordan, L. Lesshafft & A. Towne, Optimal causal Resolvent-based control using the Wiener-Hopf formalism. Journal of Fluid Mechanics, (2021) [submitted]
 
@@ -26,3 +27,4 @@ Specific instructions for each tools are included in their respective folders.
 
 
 
+Martini, E., Rodríguez, D., Towne, A., & Cavalieri, A. V. G. (2021). Efficient computation of global resolvent modes. Journal of Fluid Mechanics, 919, A3. Cambridge Core. https://doi.org/10.1017/jfm.2021.364
