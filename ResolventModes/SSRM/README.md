@@ -45,7 +45,7 @@ Other than for debug purposes, set IOSTEP and IOTIME to zero to minimise disk us
 
 
 Examples for the computation of modes for 2/3D channel flows are. To reproduce validation generate .map files for *channel_[2,3].rea*, modify *SIZE* to setup Nek5000 for a 2/3D run, compile and run *runArnoldi* as
-> `makenek channel`   
+> `./compile channel`   
 > `./runArnoldi channel_[2/3]D [number of cores] 0 20`
 
 Alternatively, run the **runExamples** file.
