@@ -40,6 +40,7 @@ Nek5000 .rea parameter IOSTEP is copied into IOPERT during run time, after   IOS
 
 Other than for debug purposes, set IOSTEP and IOTIME to zero to minimise disk usage. 
 
+The **compile** script adds files in the compiler path using the flag **FFLAGS**. Make sure that the **makenek** script in your Nek5000 bin folder does not overwrite this variable.
 
 ##Examples
 

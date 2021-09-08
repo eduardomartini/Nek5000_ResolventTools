@@ -2,12 +2,12 @@
 
 NEK5000_ResTools_PATH='${HOME}/Nek5000_ResolventTools'
 
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/FFT"
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/FLD2Force"
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/Load_FLD"
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/MultiHarm"
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/SavePerturbations"
-export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/SSRM"
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/FFT "
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/FLD2Force "
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/Load_FLD "
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/MultiHarm "
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/SavePerturbations "
+export FFLAGS+=" -I ${NEK5000_ResTools_PATH}/Libs/SSRM "
 
 if [ "$1" = "cleandata" ]; then
     rm -r IterAr* ForceFiles bm0* bm1* *.mod harmCompList.txt log* runNorm.txt

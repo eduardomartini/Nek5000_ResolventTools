@@ -106,7 +106,7 @@ c-----------------------------------------------------------------------
 c-------------------------- useric call --------------------------------
       subroutine SSRM_IC(ux,uy,uz) 
       include 'SIZE'
-      include 'Total'
+      include 'TOTAL'
       
       real ux,uy,uz
 
@@ -185,24 +185,30 @@ c-------------------------- userchk call  -----------------------------
         INQUIRE(FILE=refFile, EXIST=file_exists)
         if (file_exists) then
             if (NIO==0) write(*,*) 'Reading B matrix from file...'
-            refFile='B.fld';
+            refFile='B.fld'
             call Load_FLD_To(refFile,
      $        B(:,:,:,:,1),
      $        B(:,:,:,:,2),
      $        B(:,:,:,:,3))
+            if (NIO==0) write(*,*) '    B matrix read...'
         else
+            if (NIO==0) write(*,*) 'Setting B as identity'
             B=1
         endif
         INQUIRE(FILE="C.fld", EXIST=file_exists)
         if (file_exists) then
             if (NIO==0) write(*,*) 'Reading C matrix from file...'
-            call Load_FLD_To('C.fld',
+            refFile='C.fld'
+            call Load_FLD_To(refFile,
      $           C(:,:,:,:,1),
      $           C(:,:,:,:,2),
      $           C(:,:,:,:,3))
+            if (NIO==0) write(*,*) '   C matrix read...'
         else
+            if (NIO==0) write(*,*) 'Setting B as identity'
             C=1
         endif
+        if (NIO==0) write(*,*) 'Matrices B and C set ! '
 
         ! Set as direct or adjoint run
         if ( modulo(currIter,2)  == 0) then
