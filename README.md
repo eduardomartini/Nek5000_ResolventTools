@@ -15,6 +15,10 @@ For flexibility, all the tools are developed as to use *Nek5000* for intensive t
 
 Specific instructions for each tools are included in their respective folders. 
 
+## Comments
+
+In all the tools provided here, direct and adjoint solvers are used. In its current state, the code assumes that the boundary conditions for both problems are the same, e.g., Dirichlet boundary conditions. If this is not the case for your problem, adapt the code accordingly, e.g., changing the b.c. in the .rea file before each run, or setting the appropriate b.c. in the .usr file.  
+
 ## References
 
 1. Martini, Eduardo, Daniel Rodríguez, Aaron Towne, and André V. G. Cavalieri. “Efficient Computation of Global Resolvent Modes,”  Journal of Fluid Mechanics 919 (2021): A3. [https://doi.org/10.1017/jfm.2021.364](https://doi.org/10.1017/jfm.2021.364)
